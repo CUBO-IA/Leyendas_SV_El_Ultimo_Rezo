@@ -11,6 +11,7 @@ Juego de investigación sobrenatural en Godot 4.7.2 (GDScript), ambientado en Sa
 - Godot (cliente) habla SOLO con el motor por HTTP + JSON en API_BASE_URL (http://127.0.0.1:8000, todo en la misma laptop).
 - Motor: Python 3.12 + FastAPI. Es el único que llama a modelos de IA y el único que conoce la solución del caso (server/data/). La solución nunca se copia al cliente.
 - Diálogo: se elige por .env tras la prueba de latencia de B1 (meta < 3 s). Opción 1: API de NVIDIA (build.nvidia.com, compatible con OpenAI). Opción 2: Ollama local con nemotron-3-nano:4b en CPU/iGPU (think=false, JSON con esquema). La que no gane queda de respaldo.
+- Decisión B1 (tools/smoke_llm.py, 10 preguntas a Chonita): gana la API de NVIDIA con nvidia/nemotron-3.5-lightning-30b-a3b (mediana 0.7 s, emociones variadas). nvidia/nemotron-3.5-bolt-e4b es la alternativa rápida; Ollama local (mediana 4.6 s) es el respaldo sin internet. La API acepta JSON por response_format json_schema (no guided_json); nvidia/nemotron-nano-3-30b-a3b da 404 en esta cuenta.
 - Voz de los NPC: Magpie TTS Multilingual (API de NVIDIA), MP3. Respaldo: Piper es_MX (CPU).
 - Voz del jugador a texto: Nemotron 3.5 Transcribe (API alojada). Respaldo: faster-whisper small (CPU).
 - Personajes: dataset nvidia/Nemotron-Personas-El-Salvador -> fichas JSON -> retratos. Sin GPU NVIDIA, SDXL local no es viable: los retratos se generan con una API de imágenes en la nube o se reduce a 1-2 emociones por personaje (se decide en B5). Los placeholders siempre funcionan.
@@ -53,4 +54,13 @@ Los prompts originales de cada fase están en docs/prompts_claude_code.md. Se in
 - Windows 11. Explica en español, paso a paso, el porqué antes de actuar.
 - Rama main; un commit por fase y etiquetas v0.1 / v0.9 / v1.0 en las uniones.
 - Nunca subas .env ni claves de API.
-- Pruebas de contrato: `python -m pytest tests/contract -q` (dependencias en tests/requirements.txt).
+- Pruebas de contrato: `.venv\Scripts\python -m pytest tests/contract -q` (dependencias en tests/requirements.txt).
+
+## Entorno local
+- Python 3.12.10 en .venv (raíz del repo). Crear con `py -3.12 -m venv .venv`.
+- Godot 4.7.2 (estándar) instalado por winget en %LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\. Para leer errores sin el MCP, usar Godot_v4.7.2-stable_win64_console.exe con --path game.
+- Ollama 0.40 local; claves solo en .env (ignorado por git).
+- Motor: `.venv\Scripts\python -m server` (lee .env). Pruebas del motor: `.venv\Scripts\python -m pytest tests -q`.
+- Cliente: prueba headless `Godot_v4.7.2-stable_win64_console.exe --headless --path game res://tests/smoke_test.tscn` (agregar `-- --backend=http` con el motor corriendo). Tras agregar PNG o class_name nuevos: `--headless --path game --import`.
+- Godot lee content/, contract/fixtures/ y assets_generated/ directo de la raíz del repo (res://..), sin copias. Modo del Backend y URL: Opciones (user://settings.cfg) o `-- --backend=http --api=URL`.
+- Placeholders: `.venv\Scripts\python tools\make_placeholders.py` (Pillow, tools/requirements.txt).

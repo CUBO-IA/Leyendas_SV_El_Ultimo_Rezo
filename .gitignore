@@ -24,3 +24,6 @@ models/
 
 # Audio generado en caliente
 server/cache/
+
+# Reportes de las pruebas de humo
+tools/out/
