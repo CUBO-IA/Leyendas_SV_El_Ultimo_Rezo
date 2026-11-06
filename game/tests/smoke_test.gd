@@ -16,6 +16,7 @@ func _ready() -> void:
 	_test_scenes_load()
 	if Backend.mode == "mock":
 		await _test_mock_flow()
+		await _test_town()
 	else:
 		await _test_http()
 	print("== %d ok, %d fallos ==" % [_passes, _fails])
@@ -121,6 +122,84 @@ func _test_mock_flow() -> void:
 
 	r = await Backend.new_session("Demo", true)
 	check(r["ok"] and GameState.evidence_ids().size() == 2 and bool(GameState.world.get("demo", false)), "sesión demo con 2 evidencias")
+
+
+func _frames(n: int) -> void:
+	for i: int in n:
+		await get_tree().physics_frame
+
+
+func _test_town() -> void:
+	print("  -- pueblo (A2)")
+	var all_objects: Array[String] = []
+	var act1_objects: Array[String] = []
+	for loc: Dictionary in ContentDB.world["locations"]:
+		for obj: Dictionary in loc["objects"]:
+			all_objects.append(obj["id"])
+			if int(loc["act"]) == 1:
+				act1_objects.append(obj["id"])
+	var missing: Array[String] = []
+	for id: String in all_objects:
+		if not TownLayout.OBJECT_SPOTS.has(id):
+			missing.append(id)
+	check(missing.is_empty(), "todo objeto de world.json tiene lugar en el mapa %s" % [missing])
+	var no_spot: Array[String] = []
+	for id: String in ContentDB.witness_ids():
+		if not TownLayout.WITNESS_SPOTS.has(id):
+			no_spot.append(id)
+	check(no_spot.is_empty(), "los 10 testigos tienen lugar en el mapa %s" % [no_spot])
+	check(TownLayout.zone_at(TownLayout.to_world(Vector2i(15, 21))) == "pupuseria", "zona: frente a la pupusería")
+
+	await Backend.new_session("Pueblo")
+	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
+	add_child(town)
+	await _frames(3)
+	check(town.get("witnesses").size() == 6, "6 testigos MVP en el pueblo")
+	var visible_ids: Array[String] = []
+	for id: String in town.get("objects"):
+		if (town.get("objects")[id] as Node2D).visible:
+			visible_ids.append(id)
+	visible_ids.sort()
+	act1_objects.sort()
+	check(visible_ids == act1_objects, "solo se ven los objetos del Acto I (%d)" % act1_objects.size())
+	check(not (town.get("objects")["cuerda_campana"] as Node2D).visible, "campanario oculto en acto 1")
+
+	# Colisión: caminar hacia arriba contra la pupusería no la atraviesa.
+	var player: TownPlayer = town.get("player")
+	player.position = TownLayout.to_world(Vector2i(13, 22))
+	player.input_override = Vector2.UP
+	await _frames(70)
+	player.input_override = Vector2.ZERO
+	check(player.position.y > 20 * TownLayout.TILE - 2, "la pupusería bloquea el paso (y=%.0f)" % player.position.y)
+
+	# Enfoque: junto al tablero eléctrico el jugador lo enfoca.
+	player.position = TownLayout.to_world(Vector2i(46, 21))
+	await _frames(4)
+	var focus: Interactable = player.focus
+	check(focus != null and focus.target_id == "tablero_electrico", "enfoca el tablero eléctrico")
+
+	# E sobre el objeto: examina y muestra el texto.
+	town.call("interact", focus)
+	await _frames(25)
+	var box: MessageBox = town.get("message_box")
+	check(box.is_open(), "se abre la caja de mensaje")
+	check(GameState.has_evidence("registro_electrico"), "examinar desde el pueblo da la evidencia")
+	box.advance()
+	box.advance()
+	await _frames(2)
+	check(not box.is_open() and not player.frozen, "la caja se cierra y el jugador vuelve a moverse")
+	check(town.get("hud").toast_count() >= 1, "aviso de nueva evidencia")
+
+	# Al desbloquearse el acto 2, aparecen cementerio y quebrada.
+	var st: Dictionary = GameState.world.duplicate(true)
+	st["act"] = 2
+	(st["unlocked_locations"] as Array).append_array(["cementerio", "quebrada"])
+	GameState.apply_state(st)
+	await _frames(1)
+	check((town.get("objects")["tumba_sin_nombre"] as Node2D).visible, "acto 2 muestra el cementerio")
+	check(not (town.get("objects")["altar_mayor"] as Node2D).visible, "la iglesia sigue cerrada en acto 2")
+	town.queue_free()
+	await _frames(1)
 
 
 func _test_http() -> void:

@@ -7,6 +7,8 @@ signal game_ended(ending: Dictionary)
 
 var world: Dictionary = {}
 var last_ending: Dictionary = {}
+## Objetos ya examinados en esta partida (solo cliente: atenúa su marcador).
+var examined: Dictionary = {}
 
 
 func apply_state(state: Dictionary) -> void:
@@ -23,6 +25,7 @@ func end_game(ending: Dictionary) -> void:
 func reset() -> void:
 	world = {}
 	last_ending = {}
+	examined = {}
 
 
 func has_session() -> bool:
