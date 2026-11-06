@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/world_state.schema.json",
+  "title": "WorldState",
+  "type": "object",
+  "required": [
+    "session_id",
+    "act",
+    "clock",
+    "evidence",
+    "deductions",
+    "npcs",
+    "unlocked_locations",
+    "can_accuse",
+    "ended"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "$ref": "common.schema.json#/$defs/session_id"
+    },
+    "act": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "deductions": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/deduction"
+      }
+    },
+    "npcs": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/npc_state"
+      }
+    },
+    "unlocked_locations": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "can_accuse": {
+      "type": "boolean"
+    },
+    "ended": {
+      "type": "boolean"
+    },
+    "demo": {
+      "type": "boolean",
+      "description": "Opcional. true si la partida arrancó en modo demo."
+    }
+  }
+}

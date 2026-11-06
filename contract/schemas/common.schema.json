@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/common.schema.json",
+  "title": "Tipos comunes",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "witness_id": {
+      "enum": [
+        "chonita",
+        "chepe",
+        "chente",
+        "ramirez",
+        "padre_mauricio",
+        "tonito",
+        "beto",
+        "pilo",
+        "alcides",
+        "mercedes"
+      ]
+    },
+    "suspect_id": {
+      "enum": [
+        "cipitio",
+        "siguanaba",
+        "cadejo",
+        "padre_sin_cabeza",
+        "carreta_chillona",
+        "descarnada"
+      ]
+    },
+    "emotion": {
+      "enum": [
+        "neutral",
+        "nervioso",
+        "enojado",
+        "asustado",
+        "triste",
+        "aliviado"
+      ]
+    },
+    "level": {
+      "enum": [
+        "inicial",
+        "confrontada",
+        "confesion"
+      ]
+    },
+    "gauge": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "source": {
+      "enum": [
+        "llm",
+        "cache",
+        "fallback"
+      ]
+    },
+    "audio_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^/audio/[A-Za-z0-9_-]+\\.mp3$",
+      "description": "Ruta relativa a API_BASE_URL (/audio/{id}.mp3) o null."
+    },
+    "deduction": {
+      "type": "object",
+      "required": [
+        "id",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "npc_state": {
+      "type": "object",
+      "required": [
+        "id",
+        "level",
+        "trust",
+        "fear",
+        "met"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/witness_id"
+        },
+        "level": {
+          "$ref": "#/$defs/level"
+        },
+        "trust": {
+          "$ref": "#/$defs/gauge"
+        },
+        "fear": {
+          "$ref": "#/$defs/gauge"
+        },
+        "met": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

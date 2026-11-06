@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/ending.schema.json",
+  "title": "Ending",
+  "type": "object",
+  "required": [
+    "ending_id",
+    "title",
+    "text",
+    "scene"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "ending_id": {
+      "enum": [
+        "malo",
+        "gris",
+        "verdadero"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scene": {
+      "type": "string",
+      "pattern": "^ending_(malo|gris|verdadero)$"
+    }
+  }
+}

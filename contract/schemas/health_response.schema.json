@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/health_response.schema.json",
+  "title": "HealthResponse",
+  "type": "object",
+  "required": [
+    "status",
+    "model",
+    "warm"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "ok",
+        "degraded"
+      ]
+    },
+    "model": {
+      "type": "string"
+    },
+    "warm": {
+      "type": "boolean"
+    },
+    "tts": {
+      "type": "boolean",
+      "description": "Opcional."
+    },
+    "stt": {
+      "type": "boolean",
+      "description": "Opcional."
+    },
+    "demo_mode": {
+      "type": "boolean",
+      "description": "Opcional."
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "_aviso": "SPOILERS. Solo lo lee el motor.",
+  "rules": {
+    "order": ["malo", "verdadero", "gris"],
+    "malo": "suspect_id != solution.culprit",
+    "verdadero": "suspect_id == solution.culprit AND decision == 'revelar' AND al menos 5 de las 6 pruebas (solution.proofs) están en evidence_ids y en la evidencia del jugador",
+    "gris": "suspect_id == solution.culprit en cualquier otro caso (decision 'negociar' o pruebas incompletas)",
+    "min_proofs_true_ending": 5
+  },
+  "endings": {
+    "malo": {
+      "ending_id": "malo",
+      "title": "El pueblo sin nombres",
+      "scene": "ending_malo",
+      "text": "Señalaste a la entidad equivocada. A la siguiente medianoche, la campana suena otra vez sola: trece golpes. Cuando vuelve la luz, faltan otros nueve vecinos. En el registro civil de San Jacinto, los nombres de las primeras víctimas empiezan a borrarse, letra por letra, como si nunca hubieran existido."
+    },
+    "gris_negociar": {
+      "ending_id": "gris",
+      "title": "El pacto del silencio",
+      "scene": "ending_gris",
+      "text": "Acusaste al Padre Sin Cabeza y aceptaste su trato: los nueve vuelven a cambio de callar. Amanece y el pueblo celebra a sus desaparecidos con cohetes y pan dulce. Nadie pregunta por el padre Esteban. El campanario se vuelve a sellar... hasta el próximo Día de los Difuntos."
+    },
+    "gris_incompleto": {
+      "ending_id": "gris",
+      "title": "El pacto del silencio",
+      "scene": "ending_gris",
+      "text": "Acusaste al Padre Sin Cabeza, pero tus pruebas no bastan para que el pueblo crea lo que pasó hace veinte años. La entidad libera a los nueve y se desvanece en la cuerda de la campana. La verdad queda a medias, enterrada otra vez bajo el campanario."
+    },
+    "verdadero": {
+      "ending_id": "verdadero",
+      "title": "La última confesión",
+      "scene": "ending_verdadero",
+      "text": "Frente a todo el pueblo dices el nombre del padre Esteban y el de quienes lo mataron. Niña Mercedes da un paso al frente y confirma cada palabra. Llevas la campana funeraria a la tumba sin nombre y la entierras con una oración. Los nueve aparecen en la plaza, aturdidos, como si despertaran de un sueño de siete minutos. Por primera vez en veinte años, el reloj de la iglesia vuelve a andar."
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "session_id": "demo-0001",
+  "suspect_id": "carreta_chillona",
+  "evidence_ids": [
+    "surcos_ruedas",
+    "registro_electrico"
+  ],
+  "decision": "revelar"
+}

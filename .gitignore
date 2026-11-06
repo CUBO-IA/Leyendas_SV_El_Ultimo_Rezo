@@ -1,0 +1,26 @@
+# Secretos
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datos locales
+*.db
+*.sqlite3
+
+# Godot
+game/.godot/
+game/export/
+*.import.tmp
+
+# ComfyUI / modelos
+comfy_raw/
+models/
+*.safetensors
+*.gguf
+
+# Audio generado en caliente
+server/cache/

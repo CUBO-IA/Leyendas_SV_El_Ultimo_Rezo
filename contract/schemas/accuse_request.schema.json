@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/accuse_request.schema.json",
+  "title": "AccuseRequest",
+  "type": "object",
+  "required": [
+    "session_id",
+    "suspect_id",
+    "evidence_ids",
+    "decision"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "$ref": "common.schema.json#/$defs/session_id"
+    },
+    "suspect_id": {
+      "$ref": "common.schema.json#/$defs/suspect_id"
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "uniqueItems": true,
+      "maxItems": 10
+    },
+    "decision": {
+      "enum": [
+        "revelar",
+        "negociar"
+      ]
+    }
+  }
+}

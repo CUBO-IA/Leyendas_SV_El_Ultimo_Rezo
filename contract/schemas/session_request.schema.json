@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/session_request.schema.json",
+  "title": "SessionRequest",
+  "type": "object",
+  "required": [],
+  "additionalProperties": false,
+  "properties": {
+    "player_name": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "demo": {
+      "type": "boolean",
+      "description": "Opcional. Pide la partida guardada del modo demo."
+    }
+  }
+}

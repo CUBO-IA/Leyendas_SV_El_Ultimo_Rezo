@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "model": "nemotron-3-nano:4b",
+  "warm": true,
+  "tts": true,
+  "stt": true,
+  "demo_mode": false
+}

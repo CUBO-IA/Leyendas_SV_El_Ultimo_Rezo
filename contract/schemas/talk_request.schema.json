@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/talk_request.schema.json",
+  "title": "TalkRequest",
+  "type": "object",
+  "required": [
+    "session_id",
+    "npc_id",
+    "text",
+    "want_audio"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "$ref": "common.schema.json#/$defs/session_id"
+    },
+    "npc_id": {
+      "$ref": "common.schema.json#/$defs/witness_id"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "want_audio": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "town": "San Jacinto de las Ánimas",
+  "start_clock": "23:47",
+  "locations": [
+    {
+      "id": "plaza",
+      "name": "Plaza central",
+      "act": 1,
+      "description": "Faroles a media luz, papel picado morado y el olor a flores marchitas. La puerta de la iglesia tiene un mensaje escrito con ceniza.",
+      "objects": [
+        { "id": "puerta_iglesia", "name": "Puerta de la iglesia", "description": "Alguien escribió con ceniza: «Nueve se fueron. Uno mintió. Cuando suene la última campanada, nadie recordará sus nombres».", "evidence_id": "mensaje_ceniza" },
+        { "id": "suelo_plaza", "name": "Huellas en el polvo", "description": "Pequeñas huellas de pie descalzo. Los dedos apuntan hacia atrás, como si alguien caminara de espaldas.", "evidence_id": "huellas_invertidas" },
+        { "id": "empedrado_plaza", "name": "Empedrado de la plaza", "description": "Dos surcos profundos de ruedas antiguas que cruzan la plaza y se cortan de golpe a mitad del camino.", "evidence_id": "surcos_ruedas" },
+        { "id": "banca_lustrabotas", "name": "Banca del lustrabotas", "description": "Debajo de la banca de Toñito hay un listón morado, de los que adornan la cruz de la procesión.", "evidence_id": "liston_cruz" }
+      ]
+    },
+    {
+      "id": "pupuseria",
+      "name": "Pupusería La Bendición",
+      "act": 1,
+      "description": "El comal todavía está tibio. Huele a masa, curtido y leña.",
+      "objects": [
+        { "id": "mostrador_pupuseria", "name": "Mostrador", "description": "Un cuaderno de fiado con manchas de aceite. La última página tiene una anotación de esta misma noche.", "evidence_id": "cuaderno_ventas" },
+        { "id": "comal", "name": "Comal", "description": "Todavía caliente. Quien diga que aquí se cerró temprano está mintiendo, o tiene un comal milagroso.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "puesto_policial",
+      "name": "Puesto policial",
+      "act": 1,
+      "description": "Una oficina pequeña con un ventilador que no gira y un archivero con candado nuevo.",
+      "objects": [
+        { "id": "tablero_electrico", "name": "Tablero eléctrico", "description": "El registro del medidor marca el corte de luz exactamente a las 11:47 p. m. y el regreso a las 11:54 p. m.", "evidence_id": "registro_electrico" },
+        { "id": "archivero_policial", "name": "Archivero con candado", "description": "El candado es nuevo; el archivero, muy viejo. Una gaveta tiene la etiqueta «2006» tachada con plumón.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "casa_parroquial",
+      "name": "Casa parroquial",
+      "act": 1,
+      "description": "Santos de yeso, veladoras y un armario de madera cerrado con llave.",
+      "objects": [
+        { "id": "escritorio_parroco", "name": "Escritorio del párroco", "description": "Entre los misales hay una llave de hierro con una etiqueta: «Archivo — no tocar». Tiene polvo fresco en los dientes, como si la hubieran usado hace poco.", "evidence_id": "llave_armario" },
+        { "id": "armario_archivos", "name": "Armario de los archivos", "description": "Cerrado con llave. Por la rendija se ven cuadernos viejos atados con cáñamo.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "caseta_vigilancia",
+      "name": "Caseta de vigilancia",
+      "act": 1,
+      "description": "Una caseta de lámina con un radio de pilas, un termo de café y una silla vacía.",
+      "objects": [
+        { "id": "frente_caseta", "name": "Frente de la caseta", "description": "Más surcos de ruedas, iguales a los de la plaza. Pasan frente a la caseta y se pierden en la oscuridad.", "evidence_id": "surcos_ruedas" },
+        { "id": "silla_caseta", "name": "Silla del vigilante", "description": "La silla está fría y el café del termo se enfrió hace rato.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "casa_portillo",
+      "name": "Casa de los Portillo",
+      "act": 1,
+      "description": "Una casa de adobe con corredor, un altar de muertos con fotos viejas y un álbum familiar abierto.",
+      "objects": [
+        { "id": "album_familiar", "name": "Álbum familiar", "description": "Entre fotos de bautizos hay un recorte de periódico doblado en cuatro, amarillo de viejo.", "evidence_id": "recorte_periodico" },
+        { "id": "altar_muertos", "name": "Altar de muertos", "description": "Flores de cempasúchil, pan dulce y la foto de una niña con su vestido de procesión. Al lado, una veladora recién encendida.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "cantina",
+      "name": "Cantina El Último Trago",
+      "act": 1,
+      "description": "Una rocola apagada, mesas pegajosas y un perfume floral que no combina con el lugar.",
+      "objects": [
+        { "id": "mesa_cantina", "name": "Mesa del fondo", "description": "Un olor intenso a flores, dulce y frío, impregnado en la silla donde alguien estuvo sentado.", "evidence_id": "perfume_floral" },
+        { "id": "libreta_cantinero", "name": "Libreta del cantinero", "description": "La cuenta de El Chente: tres cervezas a las 10:30 p. m. y un café cargado a las 12:10 a. m.", "evidence_id": "cuenta_cantina" }
+      ]
+    },
+    {
+      "id": "terminal",
+      "name": "Terminal de microbuses",
+      "act": 1,
+      "description": "Microbuses dormidos, un toldo roto y la parada del bus de El Pilo.",
+      "objects": [
+        { "id": "asiento_bus", "name": "Asiento trasero del bus", "description": "Una moneda pequeña con un agujero en medio, olvidada en el asiento.", "evidence_id": "moneda_agujero" },
+        { "id": "tablero_rutas", "name": "Tablero de rutas", "description": "El último viaje oficial salió a las 10:00 p. m. Alguien borró con el dedo una anotación posterior.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "mercado",
+      "name": "Mercado",
+      "act": 1,
+      "description": "Puestos cubiertos con plástico. En la esquina, el carretón de mangos de El Beto.",
+      "objects": [
+        { "id": "carreton_beto", "name": "Carretón de El Beto", "description": "Entre las bolsas de alguashte hay un recibo arrugado de un coleccionista de antigüedades.", "evidence_id": "recibo_coleccionista" }
+      ]
+    },
+    {
+      "id": "cementerio",
+      "name": "Cementerio",
+      "act": 2,
+      "description": "Cruces torcidas, flores frescas sobre tumbas viejas y tierra removida detrás del muro.",
+      "objects": [
+        { "id": "tumba_sin_nombre", "name": "Tumba sin nombre", "description": "La tierra está removida y hay huellas de botas. Alguien excavó aquí esta misma noche.", "evidence_id": "tierra_removida" },
+        { "id": "muro_cementerio", "name": "Muro del cementerio", "description": "Huellas de pezuñas enormes y pelos negros y gruesos enganchados en el alambre.", "evidence_id": null }
+      ]
+    },
+    {
+      "id": "quebrada",
+      "name": "La quebrada",
+      "act": 2,
+      "description": "El agua suena más fuerte de lo normal. En la orilla hay un sombrero de palma.",
+      "objects": [
+        { "id": "orilla_quebrada", "name": "Orilla de la quebrada", "description": "Un mechón largo de cabello negro, enredado en una rama junto al sombrero de uno de los desaparecidos.", "evidence_id": "cabello_negro" },
+        { "id": "piedras_quebrada", "name": "Piedras del vado", "description": "Un boleto de microbús mojado, sellado a las 11:40 p. m.", "evidence_id": "boleto_microbus" }
+      ]
+    },
+    {
+      "id": "iglesia",
+      "name": "Iglesia de San Jacinto",
+      "act": 3,
+      "description": "Bancas vacías, la cruz de la procesión tirada en el pasillo y una puerta lateral entreabierta.",
+      "objects": [
+        { "id": "puerta_lateral", "name": "Puerta lateral", "description": "Entreabierta. Por aquí se entra a la sacristía sin pasar por la nave.", "evidence_id": null },
+        { "id": "altar_mayor", "name": "Detrás del altar mayor", "description": "Un hueco en la pared, tapado con ladrillos sueltos. Adentro, envuelta en una manta podrida, hay una campana pequeña cubierta de tierra de tumba.", "evidence_id": "campana_funeraria", "requires_deduction": "d_campana_altar" }
+      ]
+    },
+    {
+      "id": "campanario",
+      "name": "Campanario",
+      "act": 3,
+      "description": "La puerta estuvo sellada veinte años. Ahora está abierta, con marcas de garras en la madera. Arriba, la cuerda de la campana todavía se mece.",
+      "objects": [
+        { "id": "puerta_campanario", "name": "Puerta del campanario", "description": "Profundas marcas de garras atraviesan la madera, de arriba abajo.", "evidence_id": "marcas_garras" },
+        { "id": "cuerda_campana", "name": "Cuerda de la campana", "description": "Enredada en la cuerda hay una estola morada, deshilachada y muy antigua.", "evidence_id": "estola_esteban" },
+        { "id": "trampilla_campanario", "name": "Trampilla en el piso", "description": "Debajo del campanario hay una habitación oculta: una mesa, un reclinatorio y trece marcas rayadas en la pared.", "evidence_id": null }
+      ]
+    }
+  ]
+}

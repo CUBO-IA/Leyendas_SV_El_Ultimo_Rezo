@@ -1,0 +1,4 @@
+{
+  "error": "model_not_ready",
+  "detail": "El modelo se está calentando. Intenta en unos segundos."
+}

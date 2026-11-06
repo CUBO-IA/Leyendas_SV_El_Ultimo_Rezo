@@ -1,0 +1,64 @@
+{
+  "session_id": "demo-0001",
+  "act": 1,
+  "clock": "23:47",
+  "evidence": [],
+  "deductions": [],
+  "npcs": [
+    {
+      "id": "chonita",
+      "level": "inicial",
+      "trust": 4,
+      "fear": 3,
+      "met": false
+    },
+    {
+      "id": "tonito",
+      "level": "inicial",
+      "trust": 5,
+      "fear": 7,
+      "met": false
+    },
+    {
+      "id": "ramirez",
+      "level": "inicial",
+      "trust": 2,
+      "fear": 4,
+      "met": false
+    },
+    {
+      "id": "padre_mauricio",
+      "level": "inicial",
+      "trust": 4,
+      "fear": 5,
+      "met": false
+    },
+    {
+      "id": "alcides",
+      "level": "inicial",
+      "trust": 3,
+      "fear": 6,
+      "met": false
+    },
+    {
+      "id": "mercedes",
+      "level": "inicial",
+      "trust": 3,
+      "fear": 4,
+      "met": false
+    }
+  ],
+  "unlocked_locations": [
+    "plaza",
+    "pupuseria",
+    "puesto_policial",
+    "casa_parroquial",
+    "caseta_vigilancia",
+    "casa_portillo",
+    "cantina",
+    "terminal",
+    "mercado"
+  ],
+  "can_accuse": false,
+  "ended": false
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/present_response.schema.json",
+  "title": "PresentResponse",
+  "type": "object",
+  "required": [
+    "reply",
+    "emotion",
+    "contradiction",
+    "level",
+    "new_deductions",
+    "audio_url",
+    "state"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "reply": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600
+    },
+    "emotion": {
+      "$ref": "common.schema.json#/$defs/emotion"
+    },
+    "contradiction": {
+      "type": "boolean"
+    },
+    "level": {
+      "$ref": "common.schema.json#/$defs/level"
+    },
+    "new_deductions": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/deduction"
+      }
+    },
+    "new_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "description": "Opcional. Evidencia entregada al llegar a confesion."
+    },
+    "trust": {
+      "$ref": "common.schema.json#/$defs/gauge",
+      "description": "Opcional."
+    },
+    "fear": {
+      "$ref": "common.schema.json#/$defs/gauge",
+      "description": "Opcional."
+    },
+    "audio_url": {
+      "$ref": "common.schema.json#/$defs/audio_url"
+    },
+    "source": {
+      "$ref": "common.schema.json#/$defs/source",
+      "description": "Opcional."
+    },
+    "state": {
+      "$ref": "world_state.schema.json"
+    }
+  }
+}

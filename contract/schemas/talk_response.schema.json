@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/talk_response.schema.json",
+  "title": "TalkResponse",
+  "type": "object",
+  "required": [
+    "reply",
+    "emotion",
+    "level",
+    "trust",
+    "fear",
+    "new_evidence",
+    "new_deductions",
+    "audio_url",
+    "source",
+    "state"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "reply": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600
+    },
+    "emotion": {
+      "$ref": "common.schema.json#/$defs/emotion"
+    },
+    "level": {
+      "$ref": "common.schema.json#/$defs/level"
+    },
+    "trust": {
+      "$ref": "common.schema.json#/$defs/gauge"
+    },
+    "fear": {
+      "$ref": "common.schema.json#/$defs/gauge"
+    },
+    "new_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      }
+    },
+    "new_deductions": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/deduction"
+      }
+    },
+    "audio_url": {
+      "$ref": "common.schema.json#/$defs/audio_url"
+    },
+    "source": {
+      "$ref": "common.schema.json#/$defs/source"
+    },
+    "state": {
+      "$ref": "world_state.schema.json"
+    }
+  }
+}

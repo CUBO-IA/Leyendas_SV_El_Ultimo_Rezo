@@ -1,0 +1,22 @@
+{
+  "witnesses": [
+    { "id": "chonita", "name": "Doña Chonita", "role": "Vendedora de pupusas", "location": "pupuseria", "mvp": true, "intro": "Mire, cipote, yo no sé de espantos. Pero ese padre que andaba por aquí pidió dos pupusas de queso... y ni siquiera se le veía la cara." },
+    { "id": "chepe", "name": "Don Chepe", "role": "Conductor de microbús", "location": "terminal", "mvp": false, "intro": "Yo vi subir a una señora bien arreglada. Pero cuando miré por el retrovisor, el asiento estaba vacío. Y la puerta nunca se abrió." },
+    { "id": "chente", "name": "El Chente", "role": "El bolito del barrio", "location": "cantina", "mvp": false, "intro": "¡Yo vi al perro negro! ¡Grande como un caballo! Pero no me atacó... se me atravesó enfrente, como que no quería que siguiera." },
+    { "id": "ramirez", "name": "Agente Ramírez", "role": "Policía del pueblo", "location": "puesto_policial", "mvp": true, "intro": "Aquí no hay ningún delito. Las personas simplemente se extraviaron. Y no se meta en la iglesia, es una orden." },
+    { "id": "padre_mauricio", "name": "Padre Mauricio", "role": "Cura párroco", "location": "casa_parroquial", "mvp": true, "intro": "Hay cosas que Dios permite que olvidemos, hijo. Y hay puertas que no deben abrirse... ni siquiera por curiosidad." },
+    { "id": "tonito", "name": "Toñito", "role": "Lustrabotas", "location": "plaza", "mvp": true, "intro": "Yo vi una sombra pasar enfrente de la iglesia, pero no tenía cabeza. Se lo juro. Hasta se me cayó el betún." },
+    { "id": "beto", "name": "El Beto", "role": "Vendedor de mango con pepita y alguashte", "location": "mercado", "mvp": false, "intro": "Esa mujer me compró un mango con todo. Le puse alguashte, chile y limón. Cuando me pagó, tenía las manos heladas." },
+    { "id": "pilo", "name": "El Pilo", "role": "Cobrador de autobús", "location": "terminal", "mvp": false, "intro": "¡Suban, suban! Bueno... ayer se subió un niño con sombrero grandote. Pagó con una moneda que tenía un agujero en medio." },
+    { "id": "alcides", "name": "Don Alcides", "role": "Vigilante de colonia", "location": "caseta_vigilancia", "mvp": true, "intro": "Aquí nadie entra sin que yo lo vea. Pero anoche una carreta pasó por enfrente de la caseta... ¡y no llevaba ni bueyes!" },
+    { "id": "mercedes", "name": "Niña Mercedes", "role": "Abuela y matriarca de los Portillo", "location": "casa_portillo", "mvp": true, "intro": "Mirá, bichito... hace veinte años también sonaron trece campanadas. Pero aquella vez no desapareció nadie. Aquella vez enterramos una mentira." }
+  ],
+  "suspects": [
+    { "id": "cipitio", "name": "El Cipitío", "epithet": "El niño que nunca creció", "location": "plaza", "intro": "Huellas invertidas cerca de la iglesia y carcajadas que parecen venir de todas partes. La niña desaparecida había seguido sus risas antes de la procesión." },
+    { "id": "siguanaba", "name": "La Siguanaba", "epithet": "La mujer de los caminos", "location": "quebrada", "intro": "Una mujer de blanco junto a la quebrada, llamando a los hombres por su nombre. Tres desaparecidos fueron vistos caminando hacia el río." },
+    { "id": "cadejo", "name": "El Cadejo", "epithet": "El guardián de la oscuridad", "location": "cementerio", "intro": "Una criatura negra de ojos rojos que ronda el cementerio. Sus gruñidos se escucharon justo antes del apagón." },
+    { "id": "padre_sin_cabeza", "name": "El Padre Sin Cabeza", "epithet": "El sacerdote condenado", "location": "campanario", "intro": "Una silueta con sotana antigua que reza frente al altar. Nadie le ve el rostro, porque no tiene cabeza." },
+    { "id": "carreta_chillona", "name": "La Carreta Chillona", "epithet": "El vehículo de las almas", "location": "plaza", "intro": "El rechinar de sus ruedas en calles vacías. Dicen que carga a las almas que murieron sin descanso." },
+    { "id": "descarnada", "name": "La Descarnada", "epithet": "La belleza que esconde la muerte", "location": "cantina", "intro": "Una mujer que llegó a la fiesta patronal sin que nadie la viera llegar. Su rostro cambia en cada fotografía." }
+  ]
+}

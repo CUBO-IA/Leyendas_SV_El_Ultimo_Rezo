@@ -1,0 +1,29 @@
+{
+  "evidence": [
+    { "id": "mensaje_ceniza", "name": "Mensaje de ceniza", "category": "objeto", "description": "«Nueve se fueron. Uno mintió. Cuando suene la última campanada, nadie recordará sus nombres». Escrito en la puerta de la iglesia." },
+    { "id": "huellas_invertidas", "name": "Huellas invertidas", "category": "objeto", "description": "Huellas pequeñas de pie descalzo con los dedos hacia atrás, en el polvo de la plaza." },
+    { "id": "surcos_ruedas", "name": "Surcos de ruedas", "category": "objeto", "description": "Surcos de ruedas antiguas que pasan frente a las casas y la caseta, y terminan de golpe en la plaza." },
+    { "id": "liston_cruz", "name": "Listón de la cruz", "category": "objeto", "description": "Un listón morado de los que adornan la cruz de la procesión. Estaba debajo de la banca del lustrabotas." },
+    { "id": "cuaderno_ventas", "name": "Cuaderno de fiado de La Bendición", "category": "documento", "description": "Última anotación: «11:20 p. m. — 8 revueltas para los muchachos que están escarbando atrás del cementerio. Pagado con billete viejo»." },
+    { "id": "registro_electrico", "name": "Registro eléctrico del apagón", "category": "documento", "description": "El medidor del puesto policial registra el corte de luz a las 11:47 p. m. y el regreso a las 11:54 p. m." },
+    { "id": "llave_armario", "name": "Llave del archivo parroquial", "category": "objeto", "description": "Llave de hierro con la etiqueta «Archivo — no tocar». Tiene polvo fresco: la usaron hace poco." },
+    { "id": "recorte_periodico", "name": "Recorte de periódico de 2006", "category": "documento", "description": "«San Jacinto: trece campanadas y un párroco que se marchó sin despedirse. La policía archiva el caso en 24 horas». Noviembre de 2006." },
+    { "id": "bitacora_caseta", "name": "Bitácora del vigilante", "category": "documento", "description": "Letra temblorosa: «11:49 grito en el cementerio, fui a ver. 11:50 la pupusería sigue abierta. Luz en el campanario. 12:10 regreso a la caseta»." },
+    { "id": "testimonio_sotana", "name": "Testimonio: la figura de sotana", "category": "testimonio", "description": "Una figura con sotana antigua y sin rostro caminó a las 11:30 p. m. hacia la iglesia y entró por la puerta sellada del campanario." },
+    { "id": "medalla_nina", "name": "Medalla de la niña", "category": "objeto", "description": "Una medallita de metal opaco, fría al tacto. Era de la niña que cargaba la cruz. En el reverso tiene grabada una campanita." },
+    { "id": "diario_esteban", "name": "Diario del padre Esteban", "category": "documento", "description": "Cuaderno atado con cáñamo, fechado en 2006. Una página repite una secuencia de trece golpes de campana y varias iniciales." },
+    { "id": "expediente_2006", "name": "Expediente policial de 2006", "category": "documento", "description": "Denuncia de noviembre de 2006: trece campanadas a las 11:47 p. m. y un sacerdote desaparecido. Sello: «Archivar por orden superior»." },
+    { "id": "confesion_mercedes", "name": "Confesión de Niña Mercedes", "category": "testimonio", "description": "Lo que Niña Mercedes calló durante veinte años sobre la última noche en el campanario." },
+    { "id": "estola_esteban", "name": "Estola deteriorada", "category": "objeto", "description": "Estola morada, deshilachada, enredada en la cuerda de la campana. Tiene una E bordada en hilo dorado." },
+    { "id": "campana_funeraria", "name": "Campana funeraria", "category": "objeto", "description": "Una campana pequeña, cubierta de tierra de tumba, escondida detrás del altar mayor." },
+    { "id": "marcas_garras", "name": "Marcas de garras", "category": "objeto", "description": "Profundas marcas de garras en la puerta del campanario." },
+    { "id": "cabello_negro", "name": "Cabello negro", "category": "objeto", "description": "Un mechón largo de cabello negro junto al sombrero de un desaparecido, a la orilla de la quebrada." },
+    { "id": "perfume_floral", "name": "Perfume floral", "category": "objeto", "description": "Un olor a flores intenso y frío que queda donde alguien desapareció." },
+    { "id": "moneda_plata", "name": "Moneda de plata antigua", "category": "objeto", "description": "Una moneda de plata muy antigua, de las que se enterraban con los muertos." },
+    { "id": "moneda_agujero", "name": "Moneda con agujero", "category": "objeto", "description": "Una moneda pequeña con un agujero en medio, olvidada en el asiento trasero del bus." },
+    { "id": "cuenta_cantina", "name": "Cuenta de El Chente", "category": "documento", "description": "Tres cervezas a las 10:30 p. m. y un café cargado a las 12:10 a. m., anotados por el cantinero." },
+    { "id": "recibo_coleccionista", "name": "Recibo del coleccionista", "category": "documento", "description": "«Recibí de Alberto R.: una moneda de plata antigua. Pagado: $40». Fechado ayer." },
+    { "id": "boleto_microbus", "name": "Boleto de microbús", "category": "documento", "description": "Un boleto mojado, sellado a las 11:40 p. m., encontrado en el vado de la quebrada." },
+    { "id": "tierra_removida", "name": "Tierra removida", "category": "objeto", "description": "Una tumba sin nombre excavada esta misma noche, con huellas de botas." }
+  ]
+}

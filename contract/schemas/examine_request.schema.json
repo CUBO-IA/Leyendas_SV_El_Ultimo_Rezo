@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leyendas-sv.local/contract/examine_request.schema.json",
+  "title": "ExamineRequest",
+  "type": "object",
+  "required": [
+    "session_id",
+    "object_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "$ref": "common.schema.json#/$defs/session_id"
+    },
+    "object_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    }
+  }
+}
