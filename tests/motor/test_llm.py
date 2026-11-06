@@ -20,6 +20,8 @@ def test_normalize_talk_recorta_y_valida():
     assert out == {"reply": "Uno. Dos. Tres.", "emotion": "neutral",
                    "trust_delta": 2, "fear_delta": -2}
     assert normalize_talk({"reply": "  "}) is None
+    keep = "Está bueno, pues... ya se habían ido. No diga nada. Esa cosa regresa."
+    assert normalize_talk({"reply": keep})["reply"] == keep
     assert normalize_talk(None) is None
 
 

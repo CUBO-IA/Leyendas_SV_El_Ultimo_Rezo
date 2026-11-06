@@ -142,3 +142,19 @@ func _test_http() -> void:
 	r = await Backend.get_session()
 	check(not r["ok"] and r["error"]["error"] == "session_not_found", "sesión inexistente -> session_not_found")
 	GameState.apply_state(saved)
+
+	# B3: interrogatorio contra el motor real (el texto lo redacta el LLM).
+	r = await Backend.talk("chonita", "Buenas noches, doña. ¿Vio algo raro?")
+	check(r["ok"] and str(r["data"].get("reply", "")) != "", "POST /talk responde")
+	if r["ok"]:
+		print("    Chonita (%s, %s): %s" % [r["data"]["emotion"], r["data"]["source"], r["data"]["reply"]])
+	check(bool(GameState.npc("chonita").get("met", false)), "GameState se actualiza con state de /talk")
+	r = await Backend.examine("tablero_electrico")
+	check(r["ok"] and GameState.has_evidence("registro_electrico"), "POST /examine da registro_electrico")
+	r = await Backend.present("alcides", "registro_electrico")
+	check(r["ok"] and bool(r["data"]["contradiction"]), "POST /present quiebra a Alcides")
+	check(GameState.npc("alcides").get("level", "") == "confrontada", "Alcides queda confrontada")
+	if r["ok"]:
+		print("    Alcides (%s): %s" % [r["data"]["emotion"], r["data"]["reply"]])
+	r = await Backend.accuse("cipitio", [], "revelar")
+	check(not r["ok"] and r["error"]["error"] == "cannot_accuse", "POST /accuse en acto 1 -> cannot_accuse")

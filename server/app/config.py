@@ -33,6 +33,7 @@ class Settings:
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     nvidia_api_key: str = field(default="", repr=False)
     llm_timeout_s: float = 30.0
+    llm_reply_timeout_s: float = 12.0  # tope por respuesta en juego; luego, frase de respaldo
     warmup: bool = True
 
     # Voz (B4)
@@ -64,6 +65,7 @@ class Settings:
             nvidia_base_url=e("NVIDIA_BASE_URL", d.nvidia_base_url).rstrip("/"),
             nvidia_api_key=e("NVIDIA_API_KEY", ""),
             llm_timeout_s=float(e("LLM_TIMEOUT_S", d.llm_timeout_s)),
+            llm_reply_timeout_s=float(e("LLM_REPLY_TIMEOUT_S", d.llm_reply_timeout_s)),
             warmup=_bool(e("LLM_WARMUP"), d.warmup),
             stt_provider=e("STT_PROVIDER", d.stt_provider),
             stt_api_key=e("STT_API_KEY", ""),

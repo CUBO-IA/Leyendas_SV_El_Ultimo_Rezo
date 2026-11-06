@@ -61,6 +61,8 @@ Los prompts originales de cada fase están en docs/prompts_claude_code.md. Se in
 - Godot 4.7.2 (estándar) instalado por winget en %LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\. Para leer errores sin el MCP, usar Godot_v4.7.2-stable_win64_console.exe con --path game.
 - Ollama 0.40 local; claves solo en .env (ignorado por git).
 - Motor: `.venv\Scripts\python -m server` (lee .env). Pruebas del motor: `.venv\Scripts\python -m pytest tests -q`.
+- Recorrido real por HTTP (Chonita + quebrar a Alcides): `.venv\Scripts\python tools\smoke_game.py` con el motor corriendo.
+- Motor por capas: rules.py decide (niveles, evidencias, actos, finales); dialogue.py solo redacta con el LLM (memoria, filtros, caché, respaldo a los LLM_REPLY_TIMEOUT_S).
 - Cliente: prueba headless `Godot_v4.7.2-stable_win64_console.exe --headless --path game res://tests/smoke_test.tscn` (agregar `-- --backend=http` con el motor corriendo). Tras agregar PNG o class_name nuevos: `--headless --path game --import`.
 - Godot lee content/, contract/fixtures/ y assets_generated/ directo de la raíz del repo (res://..), sin copias. Modo del Backend y URL: Opciones (user://settings.cfg) o `-- --backend=http --api=URL`.
 - Placeholders: `.venv\Scripts\python tools\make_placeholders.py` (Pillow, tools/requirements.txt).

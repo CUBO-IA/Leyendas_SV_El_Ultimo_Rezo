@@ -37,14 +37,33 @@ class FakeProvider:
     name = "fake"
     model = "fake-model"
 
-    def __init__(self, fail_warmup: bool = False):
+    DEFAULT = {"reply": "Fíjese que no sé nada.", "emotion": "nervioso",
+               "trust_delta": 0, "fear_delta": 1}
+
+    def __init__(self, fail_warmup: bool = False, reply=None, delay: float = 0.0,
+                 error: Exception | None = None):
+        """reply: dict fijo o función(messages) -> dict|str. error: se lanza en chat()."""
         self.fail_warmup = fail_warmup
+        self.reply = reply
+        self.delay = delay
+        self.error = error
         self.calls: list = []
 
     async def chat(self, messages, schema=None, max_tokens=220, temperature=0.7):
         self.calls.append(messages)
-        text = '{"reply": "Fíjese que no sé nada.", "emotion": "nervioso", "trust_delta": 0, "fear_delta": 1}'
-        return ChatResult(text, json.loads(text), 0.01, self.name, self.model)
+        if self.delay:
+            import asyncio
+            await asyncio.sleep(self.delay)
+        if self.error:
+            raise self.error
+        out = self.reply(messages) if callable(self.reply) else (self.reply or self.DEFAULT)
+        text = out if isinstance(out, str) else json.dumps(out, ensure_ascii=False)
+        try:
+            parsed = json.loads(text)
+        except ValueError:
+            parsed = None
+        return ChatResult(text, parsed if isinstance(parsed, dict) else None,
+                          0.01, self.name, self.model)
 
     async def warmup(self):
         if self.fail_warmup:
