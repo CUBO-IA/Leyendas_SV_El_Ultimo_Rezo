@@ -95,7 +95,3 @@ Este proyecto se distribuye bajo licencia **MIT** — ver [`LICENSE`](LICENSE).
 ## Contribuir
 
 Lee [`CLAUDE.md`](CLAUDE.md) antes de enviar cambios: un commit por fase, nunca subir `.env` ni claves, y cualquier cambio en `contract/` debe actualizar fixtures y correr `tests/contract`.
-
-## ⚠️ Aviso de spoilers
-
-Este es un repositorio público. Los archivos `server/data/case_secret.json` y `server/data/endings.json` contienen la solución del caso y los textos de los finales (solo los lee el motor). Si quieres jugar sin spoilers, no los abras antes de terminar la partida.
