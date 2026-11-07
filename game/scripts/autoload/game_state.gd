@@ -9,6 +9,9 @@ var world: Dictionary = {}
 var last_ending: Dictionary = {}
 ## Objetos ya examinados en esta partida (solo cliente: atenúa su marcador).
 var examined: Dictionary = {}
+## Conversación con cada testigo: witness_id -> [{who: "player"|"npc"|"system", text, level}].
+## Solo cliente; la usa el interrogatorio y el diario (A4).
+var transcripts: Dictionary = {}
 
 
 func apply_state(state: Dictionary) -> void:
@@ -26,6 +29,18 @@ func reset() -> void:
 	world = {}
 	last_ending = {}
 	examined = {}
+	transcripts = {}
+
+
+func add_line(witness_id: String, who: String, text: String) -> void:
+	if not transcripts.has(witness_id):
+		transcripts[witness_id] = []
+	(transcripts[witness_id] as Array).append({
+		"who": who, "text": text, "level": str(npc(witness_id).get("level", "inicial"))})
+
+
+func transcript(witness_id: String) -> Array:
+	return transcripts.get(witness_id, [])
 
 
 func has_session() -> bool:

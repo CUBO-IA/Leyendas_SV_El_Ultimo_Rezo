@@ -6,6 +6,7 @@ extends Node
 
 var _fails: int = 0
 var _passes: int = 0
+var _last_contradiction: String = ""
 
 
 func _ready() -> void:
@@ -17,8 +18,11 @@ func _ready() -> void:
 	if Backend.mode == "mock":
 		await _test_mock_flow()
 		await _test_town()
+		await _test_interrogation()
 	else:
 		await _test_http()
+	# Deja liberar nodos y que el hilo de audio suelte los sonidos detenidos antes de salir.
+	await get_tree().create_timer(0.5).timeout
 	print("== %d ok, %d fallos ==" % [_passes, _fails])
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -190,6 +194,18 @@ func _test_town() -> void:
 	check(not box.is_open() and not player.frozen, "la caja se cierra y el jugador vuelve a moverse")
 	check(town.get("hud").toast_count() >= 1, "aviso de nueva evidencia")
 
+	# E sobre un testigo abre el interrogatorio; Esc vuelve al pueblo.
+	player.position = TownLayout.to_world(Vector2i(15, 22))
+	await _frames(4)
+	check(player.focus != null and player.focus.kind == "witness" and player.focus.target_id == "chonita", "enfoca a Doña Chonita")
+	town.call("interact", player.focus)
+	await _frames(3)
+	var inter: Interrogation = town.get("interrogation")
+	check(inter.is_open() and inter.witness_id == "chonita", "E abre el interrogatorio de Chonita")
+	check(not (town.get("hud") as CanvasLayer).visible, "el HUD del pueblo se oculta")
+	await _press_cancel()
+	check(not inter.is_open() and not player.frozen, "Esc vuelve al pueblo")
+
 	# Al desbloquearse el acto 2, aparecen cementerio y quebrada.
 	var st: Dictionary = GameState.world.duplicate(true)
 	st["act"] = 2
@@ -199,6 +215,68 @@ func _test_town() -> void:
 	check((town.get("objects")["tumba_sin_nombre"] as Node2D).visible, "acto 2 muestra el cementerio")
 	check(not (town.get("objects")["altar_mayor"] as Node2D).visible, "la iglesia sigue cerrada en acto 2")
 	town.queue_free()
+	await _frames(1)
+
+
+func _press_cancel() -> void:
+	var ev: InputEventAction = InputEventAction.new()
+	ev.action = "pause"
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await _frames(3)
+
+
+func _on_contradiction(level: String) -> void:
+	_last_contradiction = level
+
+
+func _test_interrogation() -> void:
+	print("  -- interrogatorio (A3)")
+	await Backend.new_session("Interrogatorio")
+	var it: Interrogation = Interrogation.new()
+	add_child(it)
+	it.contradiction_shown.connect(_on_contradiction)
+	it.open("alcides")  # se queda esperando hasta cerrar; no se espera aquí
+	await _frames(2)
+	check(it.is_open(), "se abre el interrogatorio de Don Alcides")
+	check(it.level_text() == "Declaración", "nivel inicial: Declaración")
+	check(it.gauges() == Vector2i(3, 6), "barras con confianza 3 y miedo 6")
+	check("Don Alcides:" in it.log_text() and "carreta" in it.log_text(), "muestra su presentación sin llamar al motor")
+	check(GameState.transcript("alcides").size() == 1, "la presentación queda en la memoria del cliente")
+
+	await it.ask("¿Qué vio desde la caseta?")
+	check("Tú: ¿Qué vio desde la caseta?" in it.log_text(), "la pregunta aparece en la conversación")
+	check(GameState.transcript("alcides").size() == 3, "pregunta y respuesta guardadas")
+	check(bool(GameState.npc("alcides")["met"]), "Alcides queda como conocido")
+
+	await Backend.examine("tablero_electrico")
+	it.open_picker()
+	check(it.get("_picker").visible and (it.get("_picker_list") as ItemList).item_count == 1, "selector con la evidencia que tengo")
+	await it.present("registro_electrico")
+	await _frames(2)
+	check(it.level_text() == "Confrontada", "presentar el registro lo confronta")
+	check(it.gauges() == Vector2i(2, 8), "barras actualizadas (2 y 8)")
+	check(_last_contradiction == "confrontada", "señal de contradicción")
+	check("Carreta Chillona" in it.banner_text(), "cartel con la deducción nueva")
+	check(it.is_shaking(), "la pantalla se sacude")
+	check(it.emotion == "asustado", "retrato con la emoción de la respuesta")
+
+	# Respaldo si el motor tarda: el testigo dice algo y luego llega la respuesta real.
+	it.wait_fallback_s = 0.05
+	Backend.mock_delay_s = 0.3
+	await it.ask("¿Y luego?")
+	Backend.mock_delay_s = 0.01
+	var fallback_seen: bool = false
+	for line: String in Interrogation.FALLBACK_LINES:
+		if line in it.log_text():
+			fallback_seen = true
+	check(fallback_seen, "frase de respaldo mientras espera")
+	check(GameState.transcript("alcides").back()["who"] == "npc", "la respuesta real llega después")
+
+	await _press_cancel()  # cierra el cartel
+	await _press_cancel()  # cierra el interrogatorio
+	check(not it.is_open(), "Esc cierra el interrogatorio")
+	it.queue_free()
 	await _frames(1)
 
 
@@ -237,3 +315,25 @@ func _test_http() -> void:
 		print("    Alcides (%s): %s" % [r["data"]["emotion"], r["data"]["reply"]])
 	r = await Backend.accuse("cipitio", [], "revelar")
 	check(not r["ok"] and r["error"]["error"] == "cannot_accuse", "POST /accuse en acto 1 -> cannot_accuse")
+
+	# Unión 1 por la interfaz: interrogatorio contra el motor real.
+	await Backend.new_session("Union 1")
+	await Backend.examine("tablero_electrico")
+	var it: Interrogation = Interrogation.new()
+	add_child(it)
+	it.open("chonita")
+	await _frames(2)
+	await it.ask("Buenas noches, doña. ¿A qué hora cerró la pupusería?")
+	var last: Dictionary = GameState.transcript("chonita").back()
+	check(last["who"] == "npc" and str(last["text"]).length() > 10, "Chonita contesta en la interfaz")
+	print("    Chonita: ", last["text"])
+	it.close()
+	it.open("alcides")
+	await _frames(2)
+	await it.present("registro_electrico")
+	await _frames(2)
+	check(it.level_text() == "Confrontada" and "Carreta" in it.banner_text(), "Alcides se quiebra en la interfaz")
+	print("    Alcides (%s): %s" % [it.emotion, GameState.transcript("alcides").back()["text"]])
+	it.close()
+	it.queue_free()
+	await _frames(2)

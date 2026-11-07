@@ -2,7 +2,7 @@ extends Node2D
 ## Pueblo de San Jacinto (Acto I). Arma el mapa desde TownLayout y los datos públicos;
 ## qué objetos y testigos aparecen depende del WorldState (lugares desbloqueados).
 ##  - E sobre un objeto: Backend.examine y muestra el texto.
-##  - E sobre un testigo: por ahora su presentación (el interrogatorio llega en A3).
+##  - E sobre un testigo: abre el interrogatorio.
 
 signal witness_selected(witness_id: String)  ## A3 abre el interrogatorio con esto
 
@@ -15,6 +15,7 @@ var player: TownPlayer
 var hud: Hud
 var message_box: MessageBox
 var pause_menu: PauseMenu
+var interrogation: Interrogation
 
 var objects: Dictionary = {}    ## object_id -> Node2D (marcador + Interactable)
 var witnesses: Dictionary = {}  ## witness_id -> Node2D
@@ -46,6 +47,8 @@ func _ready() -> void:
 	add_child(message_box)
 	pause_menu = PauseMenu.new()
 	add_child(pause_menu)
+	interrogation = Interrogation.new()
+	add_child(interrogation)
 	player.focus_changed.connect(_on_focus_changed)
 
 	_known_unlocked = (GameState.world.get("unlocked_locations", []) as Array).duplicate()
@@ -298,6 +301,8 @@ func _on_focus_changed(target: Interactable) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if interrogation.is_open():
+		return
 	if event.is_action_pressed("pause") and not pause_menu.is_open() and not message_box.is_open():
 		get_viewport().set_input_as_handled()
 		pause_menu.open()
@@ -340,7 +345,8 @@ func _talk_to(witness_id: String) -> void:
 		var spr: AnimatedSprite2D = npc.get_node("Sprite") as AnimatedSprite2D
 		spr.play("idle_" + CharSprites.facing(npc.global_position, player.global_position))
 	witness_selected.emit(witness_id)
-	# A3 reemplaza esto por la pantalla de interrogatorio.
-	var w: Dictionary = ContentDB.witness(witness_id)
-	await message_box.show_message("%s · %s" % [w.get("name", witness_id), w.get("role", "")],
-		"«%s»" % w.get("intro", "..."), Portraits.get_texture(witness_id, "neutral"))
+	hud.visible = false
+	await interrogation.open(witness_id)
+	hud.visible = true
+	if npc:
+		(npc.get_node("Sprite") as AnimatedSprite2D).play("idle_down")
