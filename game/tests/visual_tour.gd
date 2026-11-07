@@ -27,6 +27,11 @@ func _ready() -> void:
 
 	GameState.town_spawn = Vector2i(32, 14)
 	var town: Node = await _show(SceneRouter.TOWN, "1 pueblo frente a la iglesia")
+	var inter: Interrogation = town.get("interrogation")
+	inter.open("chonita")
+	print("[tour] 1b interrogatorio (micrófono y sugerencias)")
+	await get_tree().create_timer(STEP).timeout
+	inter.close()
 	town.queue_free()
 	GameState.interior_id = "iglesia"
 	GameState.interior_from = "town"

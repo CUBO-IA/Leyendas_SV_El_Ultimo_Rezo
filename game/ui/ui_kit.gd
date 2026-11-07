@@ -71,6 +71,32 @@ static func button(text: String, on_press: Callable, min_width: int = 280) -> Bu
 	return b
 
 
+## Ícono de micrófono dibujado a mano (las fuentes no traen emoji): cápsula, arco y pie.
+static func mic_icon(color: Color, size: int = 26) -> ImageTexture:
+	var img: Image = Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var s: float = size / 26.0
+	for y: int in size:
+		for x: int in size:
+			var p: Vector2 = Vector2(x + 0.5, y + 0.5) / s
+			var on: bool = false
+			# Cápsula: rectángulo redondeado centrado en x=13, de y=3 a y=15, ancho 8.
+			var cy: float = clampf(p.y, 7.0, 11.0)
+			if p.distance_to(Vector2(13, cy)) <= 4.0:
+				on = true
+			# Arco del soporte: anillo de radio 7 (grosor 1.6) por debajo de y=10.
+			var d: float = p.distance_to(Vector2(13, 11))
+			if p.y >= 11.0 and absf(d - 7.0) <= 0.9:
+				on = true
+			# Pie: palo vertical y base.
+			if absf(p.x - 13.0) <= 0.9 and p.y >= 18.0 and p.y <= 22.0:
+				on = true
+			if absf(p.y - 22.5) <= 0.9 and absf(p.x - 13.0) <= 4.5:
+				on = true
+			if on:
+				img.set_pixel(x, y, color)
+	return ImageTexture.create_from_image(img)
+
+
 static func centered_column(parent: Control, separation: int = 16) -> VBoxContainer:
 	var center: CenterContainer = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)

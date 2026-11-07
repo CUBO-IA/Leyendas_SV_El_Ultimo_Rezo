@@ -1,7 +1,12 @@
 class_name Hud
 extends CanvasLayer
-## HUD del pueblo: reloj, acto, evidencias, lugar actual, pista de interacción y avisos.
+## HUD del pueblo: reloj, acto, evidencias, lugar actual, pista de interacción, avisos
+## y botones de Diario y Pausa (para jugar también con el mouse).
 
+signal journal_pressed
+signal pause_pressed
+
+var journal_button: Button
 var _clock: Label
 var _counts: Label
 var _place: Label
@@ -47,6 +52,16 @@ func _ready() -> void:
 	_hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_outline(_hint)
 	root.add_child(_hint)
+
+	var buttons: HBoxContainer = HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 8)
+	buttons.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 12)
+	buttons.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	buttons.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	root.add_child(buttons)
+	journal_button = _small_button("Diario (Tab)", func() -> void: journal_pressed.emit())
+	buttons.add_child(journal_button)
+	buttons.add_child(_small_button("Pausa (Esc)", func() -> void: pause_pressed.emit()))
 	set_accuse_ready(false)
 
 	_toasts = VBoxContainer.new()
@@ -84,12 +99,14 @@ func toast(text: String, color: Color = UiKit.ACCENT) -> void:
 
 
 func set_accuse_ready(is_ready: bool) -> void:
-	_hint.text = "WASD/flechas: caminar · E: interactuar · Tab: diario · Esc: pausa"
+	_hint.text = "Clic o WASD: caminar · Clic o E: hablar y examinar"
 	if is_ready:
 		_hint.text += "   ·   Ya puedes acusar desde el diario"
 		_hint.add_theme_color_override("font_color", UiKit.ACCENT)
 	else:
 		_hint.add_theme_color_override("font_color", UiKit.MUTED)
+	if journal_button:
+		journal_button.add_theme_color_override("font_color", UiKit.ACCENT if is_ready else UiKit.INK)
 
 
 func toast_count() -> int:
@@ -98,6 +115,14 @@ func toast_count() -> int:
 
 func prompt_text() -> String:
 	return _prompt.text
+
+
+func _small_button(text: String, on_press: Callable) -> Button:
+	var b: Button = UiKit.button(text, on_press, 150)
+	b.custom_minimum_size = Vector2(150, 40)
+	b.add_theme_font_size_override("font_size", 17)
+	b.focus_mode = Control.FOCUS_NONE  # que E o Enter no lo activen sin querer
+	return b
 
 
 func _panel(parent: Control) -> PanelContainer:

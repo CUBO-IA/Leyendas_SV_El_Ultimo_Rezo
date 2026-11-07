@@ -1,12 +1,16 @@
 class_name Interrogation
 extends CanvasLayer
 ## Pantalla de interrogatorio: retrato con emoción, nivel, confianza y miedo,
-## conversación libre (Enter envía) y "Presentar evidencia".
+## conversación libre (Enter envía), preguntas sugeridas, "Presentar evidencia"
+## y micrófono de un clic (se corta solo al callarse y envía la pregunta).
 ##     await interrogation.open("alcides")   # vuelve cuando el jugador sale (Esc)
 ## Las reglas (niveles, deducciones) las decide el motor; aquí solo se muestran.
 
 signal closed
 signal contradiction_shown(level: String)
+signal journal_requested  ## Tab o el botón "Diario": quien la contiene abre el diario encima
+
+const MAX_SUGGESTIONS := 3
 
 const FALLBACK_LINES: Array[String] = [
 	"Déjeme pensar... es que esta noche ando con los nervios de punta.",
@@ -63,6 +67,11 @@ var _voice_accum: float = 0.0
 var _picker_ids: Array[String] = []
 var _wait_timer: Timer
 var _mic_btn: Button
+var _mic_meter: ProgressBar
+var _mic_pulse: Tween
+var _vad: VoiceActivity
+var _suggest_box: HFlowContainer
+var _journal_btn: Button
 var _voiced: bool = false  ## la última respuesta trae voz real
 var _listening: bool = false
 var _transcribing: bool = false
@@ -108,6 +117,7 @@ func open(id: String) -> void:
 			_append_line(str(line["who"]), str(line["text"]))
 	_root.visible = true
 	_set_busy(false)
+	_refresh_suggestions()
 	_question.grab_focus()
 	await closed
 
@@ -118,6 +128,7 @@ func close() -> void:
 	if is_listening():
 		Sound.stop_recording()
 	_listening = false
+	_update_mic_button()
 	Sound.stop_voice()
 	_root.visible = false
 	_question.release_focus()
@@ -136,13 +147,16 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		open_picker()
 		return
-	# Mantener Tab = hablar (V escribiría en la caja de texto, que siempre tiene el foco).
-	if key and not key.echo and (key.physical_keycode == KEY_TAB or key.keycode == KEY_TAB) and not _picker.visible:
+	# F1 o Ctrl+Espacio = micrófono (las letras irían a la caja de texto, que tiene el foco).
+	if key and key.pressed and not key.echo and not _picker.visible and _is_mic_key(key):
 		get_viewport().set_input_as_handled()
-		if key.pressed:
-			start_listening()
-		else:
-			stop_listening()
+		toggle_listening()
+		return
+	# Tab = diario, igual que en el pueblo (y evita que Tab salte entre botones).
+	if key and (key.physical_keycode == KEY_TAB or key.keycode == KEY_TAB):
+		get_viewport().set_input_as_handled()
+		if key.pressed and not key.echo and not _picker.visible:
+			journal_requested.emit()
 		return
 	if not _input_event_cancel(event):
 		return
@@ -221,6 +235,7 @@ func _handle_response(r: Dictionary, presenting: bool) -> void:
 		_sfx_item.play()
 	for ev: Variant in evidence:
 		_add_line("system", "Nueva evidencia: %s" % ContentDB.display_name(str(ev)))
+	_refresh_suggestions()
 	_question.grab_focus()
 
 
@@ -305,6 +320,20 @@ func is_listening() -> bool:
 	return _listening
 
 
+static func _is_mic_key(key: InputEventKey) -> bool:
+	if key.physical_keycode == KEY_F1 or key.keycode == KEY_F1:
+		return true
+	return key.ctrl_pressed and (key.physical_keycode == KEY_SPACE or key.keycode == KEY_SPACE)
+
+
+## Botón del micrófono, F1 o Ctrl+Espacio: empieza a escuchar o termina antes.
+func toggle_listening() -> void:
+	if _listening:
+		stop_listening()
+	else:
+		start_listening()
+
+
 func start_listening() -> void:
 	if _listening or _busy or _transcribing or not _root.visible:
 		return
@@ -314,30 +343,36 @@ func start_listening() -> void:
 	Sound.stop_voice()
 	if Sound.start_recording():
 		_listening = true
+		_vad = VoiceActivity.new()
 		_waiting.visible = true
 		_waiting.add_theme_color_override("font_color", UiKit.DANGER)
+		_update_mic_button()
 
 
 func stop_listening() -> void:
 	if not _listening:
 		return
 	_listening = false
+	_update_mic_button()
 	_waiting.add_theme_color_override("font_color", UiKit.MUTED)
 	var wav: PackedByteArray = Sound.stop_recording()
 	if wav.size() < 8000:  # menos de ~0.1 s
 		_waiting.visible = _busy
-		_add_line("system", "No se escuchó nada. Mantén Tab mientras hablas.")
+		_add_line("system", "No se escuchó nada. Pulsa el micrófono y habla.")
 		return
 	await transcribe(wav)
 
 
-## Envía el WAV a /stt y deja el texto en la caja para que el jugador lo revise.
+## Envía el WAV a /stt. Con «Revisar antes de enviar» (Opciones) el texto queda en
+## la caja; si no, se le pregunta directamente al testigo.
 func transcribe(wav: PackedByteArray) -> void:
 	_transcribing = true
+	_update_mic_button()
 	_waiting.visible = true
 	_question.editable = false
 	var r: Dictionary = await Backend.stt(wav)
 	_transcribing = false
+	_update_mic_button()
 	_question.editable = not _busy
 	_waiting.visible = _busy
 	if not _root.visible:
@@ -348,9 +383,33 @@ func transcribe(wav: PackedByteArray) -> void:
 		_add_line("system", "No pude transcribir tu voz: %s Escribe tu pregunta." % detail)
 		_question.grab_focus()
 		return
+	if not Sound.mic_review:
+		await ask(text)
+		return
 	_question.text = text
 	_question.grab_focus()
 	_question.caret_column = text.length()
+
+
+func _update_mic_button() -> void:
+	if _mic_pulse:
+		_mic_pulse.kill()
+		_mic_pulse = null
+	_mic_btn.modulate = Color.WHITE
+	_mic_meter.visible = _listening
+	_mic_meter.value = 0
+	if _listening:
+		_mic_btn.text = "Enviar"
+		_mic_btn.icon = UiKit.mic_icon(UiKit.DANGER)
+		_mic_btn.tooltip_text = "Te estoy escuchando. Haz una pausa al terminar o pulsa aquí."
+		_mic_pulse = _mic_btn.create_tween().set_loops()
+		_mic_pulse.tween_property(_mic_btn, "modulate", Color(1.0, 0.55, 0.55), 0.45)
+		_mic_pulse.tween_property(_mic_btn, "modulate", Color.WHITE, 0.45)
+	else:
+		_mic_btn.text = "Hablar"
+		_mic_btn.icon = UiKit.mic_icon(UiKit.INK)
+		_mic_btn.tooltip_text = "Pulsa y haz tu pregunta en voz alta (F1 o Ctrl+Espacio)."
+	_mic_btn.disabled = not _listening and (_busy or _transcribing)
 
 
 func _set_busy(b: bool) -> void:
@@ -359,6 +418,73 @@ func _set_busy(b: bool) -> void:
 	_send.disabled = b
 	_present_btn.disabled = b or GameState.evidence_ids().is_empty()
 	_waiting.visible = b
+	_update_mic_button()
+	for c: Node in _suggest_box.get_children():
+		(c as Button).disabled = b
+
+
+# ---------- preguntas sugeridas ----------
+
+## Hasta MAX_SUGGESTIONS preguntas que todavía no se le hicieron a este testigo.
+## No revelan nada del caso: son preguntas que cualquier investigador haría.
+func suggestions() -> Array[String]:
+	var place: String = ContentDB.display_name(str(ContentDB.witness(witness_id).get("location", "")))
+	var pool: Array[String] = []
+	match emotion:
+		"nervioso":
+			pool.append("¿Por qué está tan nervioso?")
+		"asustado":
+			pool.append("Tranquilo, aquí está a salvo. ¿Qué le da tanto miedo?")
+		"enojado":
+			pool.append("Disculpe, no quise ofenderle. ¿Me ayuda a encontrarlos?")
+		"triste":
+			pool.append("Lo siento mucho. ¿Conocía bien a los desaparecidos?")
+	pool.append_array([
+		"¿Qué vio esta noche?",
+		"¿Dónde estaba cuando sonó la campana?",
+		"¿Vio a alguien extraño cerca %s?" % _de_lugar(place) if place != "" else "¿Vio a alguien extraño por aquí?",
+		"¿Conocía a los que desaparecieron?",
+		"¿Quién más andaba por aquí a esa hora?",
+		"¿Qué cree que se los llevó?",
+	])
+	var asked: Array[String] = []
+	for line: Dictionary in GameState.transcript(witness_id):
+		if str(line.get("who", "")) == "player":
+			asked.append(str(line.get("text", "")))
+	var out: Array[String] = []
+	for q: String in pool:
+		if q not in asked and out.size() < MAX_SUGGESTIONS:
+			out.append(q)
+	return out
+
+
+## "Mercado" -> "del Mercado"; "Plaza central" -> "de la Plaza central".
+static func _de_lugar(place: String) -> String:
+	var first: String = place.get_slice(" ", 0)
+	var feminine: bool = first.ends_with("a") or first == "Terminal"
+	return ("de la " if feminine else "del ") + place
+
+
+func _refresh_suggestions() -> void:
+	for c: Node in _suggest_box.get_children():
+		c.queue_free()
+	for q: String in suggestions():
+		var b: Button = Button.new()
+		b.text = q
+		b.add_theme_font_size_override("font_size", 16)
+		b.focus_mode = Control.FOCUS_NONE
+		b.disabled = _busy
+		b.pressed.connect(func() -> void: ask(q))
+		_suggest_box.add_child(b)
+	if not GameState.evidence_ids().is_empty():
+		var ev: Button = Button.new()
+		ev.text = "Tengo algo que mostrarle…"
+		ev.add_theme_font_size_override("font_size", 16)
+		ev.add_theme_color_override("font_color", UiKit.ACCENT)
+		ev.focus_mode = Control.FOCUS_NONE
+		ev.disabled = _busy
+		ev.pressed.connect(open_picker)
+		_suggest_box.add_child(ev)
 
 
 # ---------- conversación ----------
@@ -400,9 +526,15 @@ func _process(delta: float) -> void:
 		return
 	var dots: String = ".".repeat(1 + floori(Time.get_ticks_msec() / 350.0) % 3)
 	if _listening:
-		_waiting.text = "Escuchando%s suelta Tab para terminar (%d s)" % [dots, ceili(Sound.record_time_left())]
-		if Sound.record_time_left() <= 0.05:
-			stop_listening()  # tope de grabación
+		var level: float = Sound.mic_level_db()
+		_mic_meter.value = clampf((level + 60.0) / 45.0, 0.0, 1.0) * 100.0
+		var verdict: String = _vad.feed(level, delta)
+		if _vad.heard_speech:
+			_waiting.text = "Te escucho%s haz una pausa al terminar y la pregunta se envía sola." % dots
+		else:
+			_waiting.text = "Escuchando%s haz tu pregunta en voz alta." % dots
+		if verdict != "" or Sound.record_time_left() <= 0.05:
+			stop_listening()  # se calló, no habló nunca o llegó al tope de grabación
 	elif _transcribing:
 		_waiting.text = "Transcribiendo tu pregunta%s" % dots
 	else:
@@ -540,35 +672,59 @@ func _build() -> void:
 	_log.add_theme_color_override("default_color", UiKit.INK)
 	log_panel.add_child(_log)
 
+	var wait_row: HBoxContainer = HBoxContainer.new()
+	wait_row.add_theme_constant_override("separation", 12)
+	right.add_child(wait_row)
+	_mic_meter = ProgressBar.new()
+	_mic_meter.show_percentage = false
+	_mic_meter.custom_minimum_size = Vector2(120, 12)
+	_mic_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var mbg: StyleBoxFlat = StyleBoxFlat.new()
+	mbg.bg_color = Color(0.1, 0.08, 0.14)
+	var mfill: StyleBoxFlat = StyleBoxFlat.new()
+	mfill.bg_color = UiKit.DANGER
+	_mic_meter.add_theme_stylebox_override("background", mbg)
+	_mic_meter.add_theme_stylebox_override("fill", mfill)
+	_mic_meter.visible = false
+	wait_row.add_child(_mic_meter)
 	_waiting = UiKit.label("", 17, UiKit.MUTED)
-	right.add_child(_waiting)
+	wait_row.add_child(_waiting)
+
+	# Preguntas sugeridas: un clic y se le pregunta al testigo.
+	_suggest_box = HFlowContainer.new()
+	_suggest_box.add_theme_constant_override("h_separation", 8)
+	_suggest_box.add_theme_constant_override("v_separation", 6)
+	right.add_child(_suggest_box)
 
 	var input_row: HBoxContainer = HBoxContainer.new()
 	input_row.add_theme_constant_override("separation", 10)
 	right.add_child(input_row)
 	_question = LineEdit.new()
-	_question.placeholder_text = "Pregúntale algo y pulsa Enter…"
+	_question.placeholder_text = "Escribe tu pregunta o pulsa Hablar…"
 	_question.max_length = 300
 	_question.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_question.custom_minimum_size = Vector2(0, 50)
 	_question.add_theme_font_size_override("font_size", 20)
 	_question.text_submitted.connect(ask)
 	input_row.add_child(_question)
+	_mic_btn = UiKit.button("Hablar", toggle_listening, 150)
+	_mic_btn.focus_mode = Control.FOCUS_NONE  # el foco se queda en la caja de texto
+	_mic_btn.icon = UiKit.mic_icon(UiKit.INK)
+	input_row.add_child(_mic_btn)
 	_send = UiKit.button("Preguntar", func() -> void: ask(_question.text), 140)
+	_send.focus_mode = Control.FOCUS_NONE
 	input_row.add_child(_send)
 	var actions: HBoxContainer = HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 10)
 	right.add_child(actions)
-	_present_btn = UiKit.button("Presentar evidencia (Ctrl+E)", open_picker, 320)
+	_present_btn = UiKit.button("Presentar evidencia (Ctrl+E)", open_picker, 300)
 	actions.add_child(_present_btn)
-	_mic_btn = UiKit.button("Hablar (mantén Tab)", func() -> void: pass, 240)
-	_mic_btn.button_down.connect(start_listening)
-	_mic_btn.button_up.connect(stop_listening)
-	actions.add_child(_mic_btn)
+	_journal_btn = UiKit.button("Diario (Tab)", func() -> void: journal_requested.emit(), 170)
+	actions.add_child(_journal_btn)
 	var spacer: Control = Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_child(spacer)
-	actions.add_child(UiKit.label("Esc: volver al pueblo", 16, UiKit.MUTED))
+	actions.add_child(UiKit.button("Volver al pueblo (Esc)", _on_back_pressed, 250))
 
 	_build_picker()
 	_build_banner()
@@ -585,6 +741,11 @@ func _build() -> void:
 	_sfx_hit = _player("res://assets/sfx/contradiccion.wav", 0.0)
 	_sfx_item = _player("res://assets/sfx/evidencia.wav", -4.0)
 	_sfx_voice = _player("res://assets/sfx/voz.wav", -18.0)
+
+
+func _on_back_pressed() -> void:
+	if not _busy and not _listening and not _transcribing:
+		close()
 
 
 func _gauge(title: String, color: Color) -> Array:

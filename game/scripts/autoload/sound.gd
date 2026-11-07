@@ -16,6 +16,8 @@ const MAX_RECORD_S := 25.0  # el motor acepta hasta 30 s
 
 var voice_enabled: bool = true
 var mic_enabled: bool = true
+## true: la pregunta dictada queda en la caja para corregirla; false: se envía sola.
+var mic_review: bool = false
 var volumes: Dictionary = {"Music": 0.45, "SFX": 0.8, "Voice": 1.0}
 
 var _music: AudioStreamPlayer
@@ -26,6 +28,8 @@ var _voice_req: HTTPRequest
 var _voice_token: int = 0
 var _mic: AudioStreamPlayer
 var _record: AudioEffectRecord
+var _analyzer_idx: int = -1
+var _analyzer: AudioEffectSpectrumAnalyzerInstance
 var _record_timer: Timer
 var _ambience: String = ""
 
@@ -201,6 +205,21 @@ func record_time_left() -> float:
 	return _record_timer.time_left
 
 
+## Volumen actual del micrófono en dB (-80 = silencio o sin grabar). Sirve para
+## dibujar el medidor y para detectar cuándo el jugador dejó de hablar.
+func mic_level_db() -> float:
+	if not is_recording():
+		return -80.0
+	if _analyzer == null:
+		var bus: int = AudioServer.get_bus_index(MIC_BUS)
+		_analyzer = AudioServer.get_bus_effect_instance(bus, _analyzer_idx) as AudioEffectSpectrumAnalyzerInstance
+		if _analyzer == null:
+			return -80.0
+	var m: Vector2 = _analyzer.get_magnitude_for_frequency_range(
+		100.0, 4000.0, AudioEffectSpectrumAnalyzerInstance.MAGNITUDE_MAX)
+	return maxf(linear_to_db(maxf(m.x, m.y)), -80.0)
+
+
 static func wav_bytes(stream: AudioStreamWAV) -> PackedByteArray:
 	var path: String = "user://ultima_pregunta.wav"
 	if stream.save_to_wav(path) != OK:
@@ -223,6 +242,7 @@ func load_settings() -> void:
 	if cfg.load(SETTINGS_PATH) == OK:
 		voice_enabled = bool(cfg.get_value("audio", "voice_enabled", voice_enabled))
 		mic_enabled = bool(cfg.get_value("audio", "mic_enabled", mic_enabled))
+		mic_review = bool(cfg.get_value("audio", "mic_review", mic_review))
 		for b: String in BUSES:
 			volumes[b] = float(cfg.get_value("audio", "volume_" + b.to_lower(), volumes[b]))
 	for b: String in BUSES:
@@ -234,6 +254,7 @@ func save_settings() -> void:
 	cfg.load(SETTINGS_PATH)  # conserva las otras secciones (backend)
 	cfg.set_value("audio", "voice_enabled", voice_enabled)
 	cfg.set_value("audio", "mic_enabled", mic_enabled)
+	cfg.set_value("audio", "mic_review", mic_review)
 	for b: String in BUSES:
 		cfg.set_value("audio", "volume_" + b.to_lower(), volumes[b])
 	cfg.save(SETTINGS_PATH)
@@ -257,10 +278,19 @@ func _setup_mic_bus() -> void:
 	for i: int in AudioServer.get_bus_effect_count(idx):
 		if AudioServer.get_bus_effect(idx, i) is AudioEffectRecord:
 			_record = AudioServer.get_bus_effect(idx, i)
+		elif AudioServer.get_bus_effect(idx, i) is AudioEffectSpectrumAnalyzer:
+			_analyzer_idx = i
 	if _record == null:
 		_record = AudioEffectRecord.new()
 		_record.format = AudioStreamWAV.FORMAT_16_BITS
 		AudioServer.add_bus_effect(idx, _record)
+	if _analyzer_idx == -1:
+		# Medidor de nivel: lee el audio del micrófono sin modificarlo.
+		var an: AudioEffectSpectrumAnalyzer = AudioEffectSpectrumAnalyzer.new()
+		an.buffer_length = 0.1
+		an.fft_size = AudioEffectSpectrumAnalyzer.FFT_SIZE_512
+		AudioServer.add_bus_effect(idx, an)
+		_analyzer_idx = AudioServer.get_bus_effect_count(idx) - 1
 
 
 func _player(sfx_name: String, bus_name: String, loop: bool) -> AudioStreamPlayer:

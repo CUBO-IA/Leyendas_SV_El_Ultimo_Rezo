@@ -44,8 +44,10 @@ Leyendas SV: El Último Rezo de las Ánimas (v1.0, Windows)
 - "Jugar sin motor (demo).bat": respuestas de ejemplo, sin internet.
 - LeyendasSV.exe a secas usa el modo guardado en Opciones.
 
-Controles: WASD/flechas mover, E interactuar, Tab diario, Esc pausa.
-En el interrogatorio, mantén Tab para hablar por micrófono.
+Controles: clic o WASD/flechas para caminar; clic o E para hablar y examinar;
+Tab o el botón Diario; Esc o el botón Pausa.
+En el interrogatorio: escribe, elige una pregunta sugerida o pulsa "Hablar"
+(o F1) y haz tu pregunta en voz alta; al hacer una pausa se envía sola.
 Créditos de retratos y personajes: assets_generated\portraits\CREDITOS.md
 "@, $utf8)
 

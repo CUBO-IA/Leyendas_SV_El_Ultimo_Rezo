@@ -212,6 +212,45 @@ func _test_town() -> void:
 	await _press_cancel()
 	check(not inter.is_open() and not player.frozen, "Esc vuelve al pueblo")
 
+	# Mouse: clic en el suelo camina hasta ahí; clic en un testigo camina y lo interroga.
+	var chonita_it: Interactable = (town.get("witnesses")["chonita"] as Node2D).get_node("Interactable")
+	check(town.call("interactable_at", chonita_it.global_position) == chonita_it, "el clic reconoce a Chonita")
+	check(town.call("interactable_at", chonita_it.global_position + Vector2(80, 80)) == null, "clic lejos: nada")
+	player.position = chonita_it.global_position + Vector2(0, 60)
+	await _frames(2)
+	var goal: Vector2 = player.position + Vector2(20, 0)
+	town.call("click_at", goal)
+	await _frames(40)
+	check(player.position.distance_to(goal) < 4.0 and not player.is_walking(), "clic en el suelo: camina hasta ahí")
+	town.call("click_at", chonita_it.global_position)
+	for i: int in 180:
+		if inter.is_open():
+			break
+		await _frames(1)
+	check(inter.is_open() and inter.witness_id == "chonita", "clic en Chonita: camina y abre el interrogatorio")
+
+	# Desde el interrogatorio, Tab (o el botón) abre el diario encima; Tab lo cierra.
+	var journal: Journal = town.get("journal")
+	inter.journal_requested.emit()
+	await _frames(2)
+	check(journal.is_open() and inter.is_open(), "el diario se abre sobre el interrogatorio")
+	await _press_journal()
+	check(not journal.is_open() and inter.is_open(), "al cerrar el diario sigue el interrogatorio")
+	await _press_cancel()
+	check(not inter.is_open(), "Esc vuelve al pueblo otra vez")
+
+	# Botones del HUD: Diario y Pausa también con el mouse.
+	(town.get("hud") as Hud).journal_pressed.emit()
+	await _frames(2)
+	check(journal.is_open(), "el botón Diario del HUD abre el diario")
+	await _press_journal()
+	(town.get("hud") as Hud).pause_pressed.emit()
+	await _frames(2)
+	var pm: PauseMenu = town.get("pause_menu")
+	check(pm.is_open(), "el botón Pausa del HUD abre la pausa")
+	await _press_cancel()
+	check(not pm.is_open() and not player.frozen, "Esc cierra la pausa")
+
 	# Al desbloquearse el acto 2, aparecen cementerio y quebrada.
 	var st: Dictionary = GameState.world.duplicate(true)
 	st["act"] = 2
@@ -257,9 +296,25 @@ func _test_interrogation() -> void:
 	check("Don Alcides:" in it.log_text() and "carreta" in it.log_text(), "muestra su presentación sin llamar al motor")
 	check(GameState.transcript("alcides").size() == 1, "la presentación queda en la memoria del cliente")
 
+	# Preguntas sugeridas: 3 botones; una ya hecha no se vuelve a sugerir.
+	var sugg: Array[String] = it.suggestions()
+	check(sugg.size() == Interrogation.MAX_SUGGESTIONS, "3 preguntas sugeridas: %s" % [sugg])
+	check("¿Vio a alguien extraño cerca de la Caseta de vigilancia?" in sugg, "sugerencia con el lugar del testigo")
+	check(Interrogation._de_lugar("Mercado") == "del Mercado" and Interrogation._de_lugar("Terminal de microbuses") == "de la Terminal de microbuses", "artículo del lugar")
+	var chip: Button = (it.get("_suggest_box") as HFlowContainer).get_child(0) as Button
+	var first_q: String = chip.text
+	chip.pressed.emit()
+	await _frames(1)
+	while it.get("_busy"):
+		await _frames(1)
+	check(("Tú: " + first_q) in it.log_text(), "un clic en la sugerencia pregunta: «%s»" % first_q)
+	await _frames(2)
+	check(first_q not in it.suggestions(), "la sugerencia usada ya no aparece")
+	check((it.get("_mic_btn") as Button).text == "Hablar" and (it.get("_mic_btn") as Button).icon != null, "botón Hablar con ícono de micrófono")
+
 	await it.ask("¿Qué vio desde la caseta?")
 	check("Tú: ¿Qué vio desde la caseta?" in it.log_text(), "la pregunta aparece en la conversación")
-	check(GameState.transcript("alcides").size() == 3, "pregunta y respuesta guardadas")
+	check(GameState.transcript("alcides").size() == 5, "pregunta y respuesta guardadas")
 	check(bool(GameState.npc("alcides")["met"]), "Alcides queda como conocido")
 
 	await Backend.examine("tablero_electrico")
@@ -514,16 +569,61 @@ func _test_sound() -> void:
 	Sound.play_voice(null)
 	check(not Sound.is_voice_playing(), "sin audio_url no hay voz")
 
-	# Interrogatorio: el texto transcrito queda en la caja para revisarlo.
+	# Detector de voz: corta tras ~1 s de silencio después de hablar; sin voz, a los 8 s.
+	var vad: VoiceActivity = VoiceActivity.new()
+	var verdict: String = ""
+	var t: float = 0.0
+	while t < 0.5:  # ruido de fondo
+		verdict = vad.feed(-62.0, 1.0 / 60.0)
+		t += 1.0 / 60.0
+	while t < 2.0:  # habla
+		verdict = vad.feed(-30.0 + randf_range(-4, 4), 1.0 / 60.0)
+		t += 1.0 / 60.0
+	check(vad.heard_speech and verdict == "", "el detector oye la voz y sigue escuchando")
+	var end_at: float = -1.0
+	while t < 5.0 and end_at < 0.0:  # silencio
+		if vad.feed(-61.0, 1.0 / 60.0) == "end":
+			end_at = t
+		t += 1.0 / 60.0
+	check(end_at > 2.9 and end_at < 3.4, "corta ~1.1 s después de callarse (%.2f s)" % (end_at - 2.0))
+	var mute: VoiceActivity = VoiceActivity.new()
+	var no_speech_at: float = -1.0
+	for i: int in 600:
+		if mute.feed(-65.0, 1.0 / 60.0) == "no_speech":
+			no_speech_at = i / 60.0
+			break
+	check(not mute.heard_speech and absf(no_speech_at - VoiceActivity.NO_SPEECH_S) < 0.1, "sin voz se rinde a los 8 s")
+	var noisy: VoiceActivity = VoiceActivity.new()
+	for i: int in 120:  # ruido de fondo alto y parejo: no es voz
+		noisy.feed(-40.0 + randf_range(-2, 2), 1.0 / 60.0)
+	check(not noisy.heard_speech, "un ruido de fondo parejo no cuenta como voz")
+	var cold: VoiceActivity = VoiceActivity.new()
+	for i: int in 20:  # primeros cuadros: el medidor aún no tiene datos
+		cold.feed(-80.0, 1.0 / 60.0)
+	for i: int in 90:  # ruido de una laptop real
+		cold.feed(-52.0 + randf_range(-6, 6), 1.0 / 60.0)
+	check(not cold.heard_speech, "las lecturas vacías del inicio no descalibran el detector")
+	check(Sound.mic_level_db() == -80.0, "sin grabar, el nivel del micrófono es -80 dB")
+
+	# Interrogatorio: con «revisar antes de enviar», el texto transcrito queda en la caja.
+	var prev_review: bool = Sound.mic_review
 	await Backend.new_session("Microfono")
 	var it: Interrogation = Interrogation.new()
 	add_child(it)
 	it.open("chonita")
 	await _frames(2)
+	Sound.mic_review = true
 	await it.transcribe(_test_wav())
 	var q: LineEdit = it.get("_question")
 	var expected: String = str(Paths.read_json(Paths.fixture("stt_response__ejemplo"))["text"])
 	check(q.text == expected and q.has_focus(), "la voz transcrita queda en la caja: «%s»" % q.text)
+	# Sin revisar (lo normal): la pregunta dictada se le hace directamente al testigo.
+	q.text = ""
+	Sound.mic_review = false
+	await it.transcribe(_test_wav())
+	check(("Tú: " + expected) in it.log_text() and q.text == "", "la voz transcrita se envía sola")
+	check(GameState.transcript("chonita").back()["who"] == "npc", "y el testigo responde")
+	Sound.mic_review = prev_review
 	it.close()
 	it.queue_free()
 	await _frames(1)

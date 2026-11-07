@@ -6,6 +6,7 @@ var _url: LineEdit
 var _result: Label
 var _voice: CheckBox
 var _mic: CheckBox
+var _mic_review: CheckBox
 var _sliders: Dictionary = {}
 
 
@@ -33,8 +34,10 @@ func _ready() -> void:
 	col.add_child(UiKit.label("Sonido", 20, UiKit.MUTED))
 	_voice = _check("Voz de los personajes (Magpie TTS)", Sound.voice_enabled)
 	col.add_child(_voice)
-	_mic = _check("Hablar con el micrófono (mantén Tab en el interrogatorio)", Sound.mic_enabled)
+	_mic = _check("Hablar con el micrófono (botón Hablar o F1 en el interrogatorio)", Sound.mic_enabled)
 	col.add_child(_mic)
+	_mic_review = _check("Revisar la pregunta dictada antes de enviarla", Sound.mic_review)
+	col.add_child(_mic_review)
 	for bus: String in Sound.BUSES:
 		col.add_child(_slider(bus))
 
@@ -82,6 +85,7 @@ func _slider(bus: String) -> HBoxContainer:
 func _apply() -> void:
 	Sound.voice_enabled = _voice.button_pressed
 	Sound.mic_enabled = _mic.button_pressed
+	Sound.mic_review = _mic_review.button_pressed
 	Backend.set_mode(Backend.MODES[_mode.selected])
 	Backend.set_base_url(_url.text)
 	_url.text = Backend.base_url

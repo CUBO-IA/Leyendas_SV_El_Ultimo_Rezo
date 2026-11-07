@@ -22,11 +22,11 @@ func _ready() -> void:
 	add_child(shape)
 
 
-## Texto de la pista en el HUD, p. ej. "E · Examinar Comal".
+## Texto de la pista en el HUD, p. ej. "E o clic · Examinar Comal".
 func prompt() -> String:
 	if label != "":
-		return "E · " + label
+		return "E o clic · " + label
 	var name_text: String = ContentDB.display_name(target_id)
 	if kind == "witness":
-		return "E · Hablar con %s" % name_text
-	return "E · Examinar %s" % name_text
+		return "E o clic · Hablar con %s" % name_text
+	return "E o clic · Examinar %s" % name_text

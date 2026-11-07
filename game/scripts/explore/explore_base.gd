@@ -3,7 +3,8 @@ extends Node2D
 ## Base de las escenas que se recorren a pie (pueblo e interiores).
 ## La subclase arma su mapa en _build_map() con los ayudantes de aquí; esta base
 ## pone la interfaz (HUD, mensajes, pausa, interrogatorio, diario, acusación) y
-## resuelve la interacción con E (testigo, objeto, puerta) y Tab (diario).
+## resuelve la interacción con E o clic (testigo, objeto, puerta) y Tab (diario).
+## Clic en el suelo: el jugador camina hasta ahí; clic en algo: camina y lo usa.
 
 signal witness_selected(witness_id: String)
 
@@ -28,6 +29,8 @@ var _known_unlocked: Array = []
 var _zone: String = "-"
 var _accuse_announced: bool = false
 var _known_act: int = 1
+var _click_target: Interactable = null  ## a dónde va el jugador tras un clic
+var _hovering: bool = false
 
 
 func _ready() -> void:
@@ -54,6 +57,13 @@ func _ready() -> void:
 	accusation = Accusation.new()
 	add_child(accusation)
 	player.focus_changed.connect(_on_focus_changed)
+	hud.journal_pressed.connect(func() -> void:
+		if not _overlay_open() and not _busy:
+			open_journal())
+	hud.pause_pressed.connect(func() -> void:
+		if not _overlay_open() and not _busy:
+			pause_menu.open())
+	interrogation.journal_requested.connect(_journal_from_interrogation)
 
 	_known_unlocked = (GameState.world.get("unlocked_locations", []) as Array).duplicate()
 	_known_act = GameState.act()
@@ -88,6 +98,16 @@ func _process(_delta: float) -> void:
 	if z != _zone:
 		_zone = z
 		hud.set_place(z)
+	# Llegó a lo que se clicó: lo usa. Si se detuvo sin alcanzarlo, se olvida.
+	if _click_target and not _busy and not _overlay_open():
+		if player.focus == _click_target:
+			var t: Interactable = _click_target
+			_click_target = null
+			player.stop_walking()
+			interact(t)
+		elif not player.is_walking():
+			_click_target = null
+	_update_hover()
 
 
 func spawn_player(at: Vector2, limits: Rect2i = Rect2i(), follow: bool = true) -> void:
@@ -269,6 +289,55 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("interact") and player.focus:
 		get_viewport().set_input_as_handled()
 		interact(player.focus)
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		get_viewport().set_input_as_handled()
+		click_at(get_global_mouse_position())
+
+
+## Clic en el mundo: sobre un testigo, objeto o puerta camina hasta ahí y lo usa;
+## en el suelo, solo camina.
+func click_at(world_pos: Vector2) -> void:
+	if _busy or _overlay_open():
+		return
+	var it: Interactable = interactable_at(world_pos)
+	if it and player.focus == it:
+		_click_target = null
+		interact(it)
+		return
+	_click_target = it
+	player.walk_to(it.global_position + Vector2(0, 8) if it else world_pos)
+
+
+## El Interactable visible bajo un punto del mundo (o null).
+func interactable_at(world_pos: Vector2) -> Interactable:
+	var best: Interactable = null
+	var best_d: float = INF
+	for group: Dictionary in [witnesses, objects, doors]:
+		for node: Node2D in group.values():
+			if not node.visible:
+				continue
+			var it: Interactable = node.get_node_or_null("Interactable") as Interactable
+			if it == null or not it.monitorable:
+				continue
+			# El dibujo queda por encima del punto de interacción: se mide un poco más arriba.
+			var d: float = world_pos.distance_to(it.global_position + Vector2(0, -4))
+			if d <= it.radius + 4.0 and d < best_d:
+				best_d = d
+				best = it
+	return best
+
+
+func _update_hover() -> void:
+	var over: bool = not _overlay_open() and not _busy \
+		and interactable_at(get_global_mouse_position()) != null
+	if over != _hovering:
+		_hovering = over
+		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND if over else Input.CURSOR_ARROW)
+
+
+func _exit_tree() -> void:
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 
 func interact(target: Interactable) -> void:
@@ -354,6 +423,17 @@ func open_journal() -> void:
 		hud.visible = true
 		player.frozen = false
 		_busy = false
+
+
+## Diario abierto desde el interrogatorio (Tab o su botón): se dibuja encima. Si desde
+## ahí el jugador decide acusar, se cierra el interrogatorio y se abre la acusación.
+func _journal_from_interrogation() -> void:
+	if journal.is_open():
+		return
+	var wants_accuse: bool = await journal.open()
+	if wants_accuse and is_inside_tree():
+		interrogation.close()
+		await open_accusation()
 
 
 func open_accusation() -> void:

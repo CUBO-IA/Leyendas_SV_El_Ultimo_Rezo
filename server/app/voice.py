@@ -75,10 +75,20 @@ def pcm_to_mp3(pcm: bytes, rate: int) -> bytes:
 _MISPLACED_OPEN = re.compile(r"(\w+)([¿¡])", re.UNICODE)
 
 
+_LATIN = re.compile(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]")
+_LETTER = re.compile(r"[^\W\d_]", re.UNICODE)
+
+
 def tidy_transcript(text: str) -> str:
-    """El reconocedor pone '¿' y '¡' después de la palabra ('Qué¿ vio'): los regresa a su lugar."""
+    """El reconocedor pone '¿' y '¡' después de la palabra ('Qué¿ vio'): los regresa a su lugar.
+    Si casi no hay letras latinas (el modelo multilingüe 'oye' ruso o chino en el ruido),
+    devuelve "" para que el juego diga que no se entendió."""
     text = _MISPLACED_OPEN.sub(lambda m: m.group(2) + m.group(1), text)
-    return re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
+    letters = _LETTER.findall(text)
+    if letters and len(_LATIN.findall(text)) < 0.8 * len(letters):
+        return ""
+    return text
 
 
 def wav_to_pcm16k(wav_bytes: bytes) -> bytes:

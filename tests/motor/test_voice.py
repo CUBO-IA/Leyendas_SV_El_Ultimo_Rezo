@@ -150,6 +150,14 @@ def test_signos_de_apertura_en_su_lugar():
     assert V.tidy_transcript("¿Qué vio?") == "¿Qué vio?"
 
 
+def test_transcripcion_en_otro_alfabeto_se_descarta():
+    # Con ruido, el modelo multilingüe a veces "oye" otro idioma: mejor "no se entendió".
+    assert V.tidy_transcript("Ой, нас нужно") == ""
+    assert V.tidy_transcript("你好") == ""
+    assert V.tidy_transcript("¿Dónde estaba usted?") == "¿Dónde estaba usted?"
+    assert V.tidy_transcript("") == ""
+
+
 def test_voz_por_testigo_y_emocion():
     assert V.voice_for("chonita", "enojado") == "Magpie-Multilingual.ES-US.Isabela.Angry"
     assert V.voice_for("chonita", "nervioso") == "Magpie-Multilingual.ES-US.Isabela.Neutral"
