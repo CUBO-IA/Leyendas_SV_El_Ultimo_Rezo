@@ -42,3 +42,35 @@ def test_busto_cuadrado_y_compuesto():
     assert b.width == b.height == int(500 * 0.6)
     out = P.compose(b)
     assert out.size == (512, 512) and out.mode == "RGB"
+
+
+def test_cada_testigo_tiene_las_6_emociones():
+    for w in data.characters()["witnesses"]:
+        for emo in EMOTIONS:
+            path = OUT / f"{w['id']}_{emo}.png"
+            assert path.exists(), path.name
+            with Image.open(path) as im:
+                assert im.size == (512, 512), path.name
+
+
+def test_emocion_derivada_cambia_color_y_lleva_icono():
+    base = Image.new("RGB", (512, 512), (120, 120, 120))
+    for emo in P.DERIVED:
+        out = P.derive(base, emo)
+        assert out.size == (512, 512)
+        assert out.getpixel((10, 400)) != (120, 120, 120), emo  # gradación
+        corner = {c for _, c in out.crop((512 - 120, 20, 512, 140)).getcolors(1 << 16)}
+        assert len(corner - {out.getpixel((512 - 8, 400))}) >= 1 and len(corner) >= 2, emo  # el ícono
+    assert set(P.DERIVED) == EMOTIONS - {"neutral"} and set(P.ICONS) == {v[4] for v in P.DERIVED.values()}
+
+
+def test_las_emociones_dibujadas_no_se_reemplazan():
+    # Mercedes trae "enojado" dibujado: es idéntico a su neutral (mismo dibujo), no un derivado.
+    a = Image.open(OUT / "mercedes_enojado.png").convert("RGB")
+    b = Image.open(OUT / "mercedes_neutral.png").convert("RGB")
+    assert a.tobytes() == b.tobytes()
+
+
+def test_cipitio_con_arte_del_equipo():
+    path, _, _ = P.TEAM_SUSPECTS["cipitio"]
+    assert path.exists() and path.name == "Cipitio.png"

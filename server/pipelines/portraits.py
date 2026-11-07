@@ -17,7 +17,7 @@ import math
 import random
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 REFS = ROOT / "assets_generated" / "personajes"
@@ -230,17 +230,113 @@ SUSPECTS = {"cipitio": cipitio, "siguanaba": siguanaba, "cadejo": cadejo,
             "padre_sin_cabeza": padre_sin_cabeza, "carreta_chillona": carreta_chillona,
             "descarnada": descarnada}
 
+# Sospechosos con arte del equipo (reemplaza al procedural): id -> (dibujo, tamaño, desplazamiento x)
+TEAM_SUSPECTS: dict[str, tuple[Path, float, float]] = {
+    "cipitio": (ROOT / "assets_generated" / "fachadas" / "Cipitio.png", 0.82, 0.03),
+}
+
 
 def suspects() -> list[Path]:
     written = []
     for sid, fn in SUSPECTS.items():
         small, glow = fn()
-        bg = background(SIZE, glow).convert("RGBA")
-        fig = small.resize((SIZE, SIZE), Image.NEAREST)
-        bg.alpha_composite(fig)
+        team = TEAM_SUSPECTS.get(sid)
+        if team and team[0].exists():
+            img = compose(bust(Image.open(team[0]), team[1], team[2]), glow)
+        else:
+            bg = background(SIZE, glow).convert("RGBA")
+            bg.alpha_composite(small.resize((SIZE, SIZE), Image.NEAREST))
+            img = bg.convert("RGB")
         path = OUT / f"{sid}_neutral.png"
-        bg.convert("RGB").save(path)
+        img.save(path)
         written.append(path)
+    return written
+
+
+# ---------- emociones derivadas ----------
+# Cada testigo trae una o dos emociones dibujadas. Las demás se derivan del neutral con
+# una gradación de color y un ícono de expresión (estilo manga, en pixel art) en la
+# esquina superior derecha. Nunca reemplazan una emoción dibujada a mano.
+
+# emoción -> (tinte, fuerza del tinte, saturación, brillo, ícono)
+DERIVED: dict[str, tuple[tuple[int, int, int], float, float, float, str]] = {
+    "nervioso": ((255, 214, 120), 0.10, 1.0, 1.0, "sudor"),
+    "enojado": ((225, 45, 30), 0.24, 1.15, 0.95, "enojo"),
+    "asustado": ((100, 120, 210), 0.26, 0.55, 0.85, "susto"),
+    "triste": ((70, 90, 170), 0.30, 0.55, 0.80, "lluvia"),
+    "aliviado": ((255, 205, 140), 0.14, 1.05, 1.08, "brillo"),
+}
+
+# Íconos de 16x16 ('.' vacío). Se escalan x6.
+ICONS: dict[str, tuple[list[str], dict[str, tuple[int, int, int]]]] = {
+    "sudor": ([
+        "......o.........", ".....obo........", "....obbbo.......", "...obbwbbo......",
+        "...obwbbbo......", "...obbbbbo......", "....obbbo.......", ".....ooo....o...",
+        "...........obo..", "..........obwbo.", "..........obbbo.", "...........ooo..",
+        "................", "................", "................", "................"],
+        {"o": (20, 40, 90), "b": (110, 190, 255), "w": (235, 250, 255)}),
+    "enojo": ([
+        "................", "...rr......rr...", "..rRRr....rRRr..", "..rRRRr..rRRRr..",
+        "...rRRr..rRRr...", "....rr....rr....", "................", "................",
+        "....rr....rr....", "...rRRr..rRRr...", "..rRRRr..rRRRr..", "..rRRr....rRRr..",
+        "...rr......rr...", "................", "................", "................"],
+        {"r": (90, 10, 10), "R": (240, 50, 40)}),
+    "susto": ([
+        "..w...w...w.....", "..w...w...w.....", "..ww..ww..ww....", "...w...w...w....",
+        "...w...w...w....", "..ww..ww..ww....", "..w...w...w.....", "..w...w...w.....",
+        "................", "................", "................", "................",
+        "................", "................", "................", "................"],
+        {"w": (200, 225, 255)}),
+    "lluvia": ([
+        "....oooooo......", "..oogggggoo.....", ".ogggggggggoo...", "ogggggggggggggo.",
+        "ogggggggggggggo.", ".ooooooooooooo..", "................", "..b....b....b...",
+        "..b....b....b...", "................", "....b....b......", "....b....b......",
+        "................", "................", "................", "................"],
+        {"o": (30, 30, 50), "g": (90, 95, 120), "b": (110, 160, 240)}),
+    "brillo": ([
+        ".......y........", ".......y........", "......yYy.......", "..yyyyYwYyyyy...",
+        "......yYy.......", ".......y........", ".......y.....y..", "............yYy.",
+        ".............y..", "...y............", "..yYy...........", "...y............",
+        "................", "................", "................", "................"],
+        {"y": (200, 150, 30), "Y": (255, 225, 90), "w": (255, 255, 230)}),
+}
+
+
+def icon(name: str, scale: int = 6) -> Image.Image:
+    rows, colors = ICONS[name]
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch in colors:
+                im.putpixel((x, y), (*colors[ch], 255))
+    return im.resize((16 * scale, 16 * scale), Image.NEAREST)
+
+
+def derive(neutral: Image.Image, emotion: str) -> Image.Image:
+    tint, amount, sat, bright, ico = DERIVED[emotion]
+    img = neutral.convert("RGB")
+    img = ImageEnhance.Color(img).enhance(sat)
+    img = ImageEnhance.Brightness(img).enhance(bright)
+    img = Image.blend(img, Image.new("RGB", img.size, tint), amount)
+    out = img.convert("RGBA")
+    out.alpha_composite(icon(ico), (SIZE - 16 * 6 - 18, 22))
+    return out.convert("RGB")
+
+
+def derived_emotions() -> list[Path]:
+    """Completa las 6 emociones de cada testigo a partir de su neutral."""
+    written = []
+    for _fname, (wid, drawn) in REFERENCES.items():
+        neutral = OUT / f"{wid}_neutral.png"
+        if not neutral.exists():
+            continue
+        base = Image.open(neutral)
+        for emo in DERIVED:
+            if emo == drawn:
+                continue  # la dibujada a mano manda
+            path = OUT / f"{wid}_{emo}.png"
+            derive(base, emo).save(path)
+            written.append(path)
     return written
 
 
@@ -248,7 +344,10 @@ CREDITS_TEXT = """# Créditos de los retratos
 
 - **Testigos:** arte de referencia del equipo (fescobar85), en `assets_generated/personajes/`.
   `server/pipelines/portraits.py` los recorta a busto de 512x512 sobre un fondo nocturno.
-- **Sospechosos:** pixel art procedural generado por `server/pipelines/portraits.py`.
+- **Emociones:** cada testigo trae una o dos emociones dibujadas; las demás se derivan de su
+  retrato neutral (gradación de color e ícono de expresión en pixel art).
+- **Sospechosos:** el Cipitío es arte del equipo (fescobar85, `assets_generated/fachadas/Cipitio.png`);
+  los demás son pixel art procedural generado por `server/pipelines/portraits.py`.
 - `Nayik.png` no se usa en el juego.
 """
 
@@ -257,8 +356,9 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "CREDITOS.md").write_text(CREDITS_TEXT, encoding="utf-8")
     w = witnesses()
+    d = derived_emotions()
     s = suspects()
-    print(f"{len(w)} retratos de testigos y {len(s)} de sospechosos en {OUT}")
+    print(f"{len(w)} retratos de testigos, {len(d)} emociones derivadas y {len(s)} de sospechosos en {OUT}")
 
 
 if __name__ == "__main__":
