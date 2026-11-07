@@ -4,6 +4,8 @@ extends CanvasLayer
 const TITLE := "res://scenes/title.tscn"
 const OPTIONS := "res://scenes/options.tscn"
 const TOWN := "res://scenes/town.tscn"
+const INTERIOR := "res://scenes/interior.tscn"
+const ENDING := "res://scenes/ending.tscn"
 
 var _rect: ColorRect
 var _busy: bool = false

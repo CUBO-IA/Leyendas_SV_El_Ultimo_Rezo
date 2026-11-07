@@ -7,6 +7,7 @@ var _counts: Label
 var _place: Label
 var _prompt: Label
 var _toasts: VBoxContainer
+var _hint: Label
 
 
 func _ready() -> void:
@@ -34,18 +35,19 @@ func _ready() -> void:
 	root.add_child(_place)
 
 	_prompt = UiKit.label("", 20, UiKit.INK)
-	_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 28)
+	_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 46)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_outline(_prompt)
 	root.add_child(_prompt)
 
-	var hint: Label = UiKit.label("WASD/flechas: caminar · E: interactuar · Esc: pausa", 14, UiKit.MUTED)
-	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 12)
-	hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_outline(hint)
-	root.add_child(hint)
+	_hint = UiKit.label("", 14, UiKit.MUTED)
+	_hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 12)
+	_hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_outline(_hint)
+	root.add_child(_hint)
+	set_accuse_ready(false)
 
 	_toasts = VBoxContainer.new()
 	_toasts.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 18)
@@ -79,6 +81,15 @@ func toast(text: String, color: Color = UiKit.ACCENT) -> void:
 	t.tween_interval(2.8)
 	t.tween_property(p, "modulate:a", 0.0, 0.6)
 	t.tween_callback(p.queue_free)
+
+
+func set_accuse_ready(is_ready: bool) -> void:
+	_hint.text = "WASD/flechas: caminar · E: interactuar · Tab: diario · Esc: pausa"
+	if is_ready:
+		_hint.text += "   ·   Ya puedes acusar desde el diario"
+		_hint.add_theme_color_override("font_color", UiKit.ACCENT)
+	else:
+		_hint.add_theme_color_override("font_color", UiKit.MUTED)
 
 
 func toast_count() -> int:

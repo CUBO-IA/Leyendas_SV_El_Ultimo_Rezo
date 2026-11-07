@@ -18,6 +18,11 @@ func _ready() -> void:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
 		for key: int in BINDINGS[action]:
-			var ev: InputEventKey = InputEventKey.new()
-			ev.physical_keycode = key as Key
-			InputMap.action_add_event(action, ev)
+			# Tecla física (independiente de la distribución) y lógica (teclas simuladas,
+			# escritorio remoto): cualquiera de las dos activa la acción.
+			var phys: InputEventKey = InputEventKey.new()
+			phys.physical_keycode = key as Key
+			InputMap.action_add_event(action, phys)
+			var logical: InputEventKey = InputEventKey.new()
+			logical.keycode = key as Key
+			InputMap.action_add_event(action, logical)

@@ -19,8 +19,10 @@ func _ready() -> void:
 		await _test_mock_flow()
 		await _test_town()
 		await _test_interrogation()
+		await _test_a4()
 	else:
 		await _test_http()
+		await _test_full_game_http()
 	# Deja liberar nodos y que el hilo de audio suelte los sonidos detenidos antes de salir.
 	await get_tree().create_timer(0.5).timeout
 	print("== %d ok, %d fallos ==" % [_passes, _fails])
@@ -144,9 +146,9 @@ func _test_town() -> void:
 				act1_objects.append(obj["id"])
 	var missing: Array[String] = []
 	for id: String in all_objects:
-		if not TownLayout.OBJECT_SPOTS.has(id):
+		if not TownLayout.OBJECT_SPOTS.has(id) and not InteriorLayout.has_object(id):
 			missing.append(id)
-	check(missing.is_empty(), "todo objeto de world.json tiene lugar en el mapa %s" % [missing])
+	check(missing.is_empty(), "todo objeto de world.json tiene lugar (pueblo o interior) %s" % [missing])
 	var no_spot: Array[String] = []
 	for id: String in ContentDB.witness_ids():
 		if not TownLayout.WITNESS_SPOTS.has(id):
@@ -166,7 +168,7 @@ func _test_town() -> void:
 	visible_ids.sort()
 	act1_objects.sort()
 	check(visible_ids == act1_objects, "solo se ven los objetos del Acto I (%d)" % act1_objects.size())
-	check(not (town.get("objects")["cuerda_campana"] as Node2D).visible, "campanario oculto en acto 1")
+	check(town.get("doors").has("iglesia"), "la iglesia tiene puerta en el pueblo")
 
 	# Colisión: caminar hacia arriba contra la pupusería no la atraviesa.
 	var player: TownPlayer = town.get("player")
@@ -213,7 +215,14 @@ func _test_town() -> void:
 	GameState.apply_state(st)
 	await _frames(1)
 	check((town.get("objects")["tumba_sin_nombre"] as Node2D).visible, "acto 2 muestra el cementerio")
-	check(not (town.get("objects")["altar_mayor"] as Node2D).visible, "la iglesia sigue cerrada en acto 2")
+	check(not GameState.is_unlocked("iglesia"), "la iglesia sigue cerrada en acto 2")
+	town.call("use_door", "iglesia")
+	await _frames(2)
+	var mb: MessageBox = town.get("message_box")
+	check(mb.is_open(), "la puerta cerrada avisa que está cerrado")
+	mb.advance()
+	mb.advance()
+	await _frames(1)
 	town.queue_free()
 	await _frames(1)
 
@@ -278,6 +287,196 @@ func _test_interrogation() -> void:
 	check(not it.is_open(), "Esc cierra el interrogatorio")
 	it.queue_free()
 	await _frames(1)
+
+
+## Estado de acto 3 inyectado (el mock no avanza actos solo).
+func _act3_state(evidence: Array) -> void:
+	var st: Dictionary = GameState.world.duplicate(true)
+	st["act"] = 3
+	st["clock"] = "00:47"
+	st["can_accuse"] = true
+	(st["unlocked_locations"] as Array).append_array(["cementerio", "quebrada", "iglesia", "campanario"])
+	st["evidence"] = evidence
+	st["deductions"] = [{"id": "d_carreta_despues", "text": "La Carreta Chillona llegó a las 11:54, después de las desapariciones."}]
+	GameState.apply_state(st)
+	if Backend.mode == "mock":
+		(Backend.get("_mock") as MockBackend).state = st.duplicate(true)  # el mock guarda su propio estado
+
+
+func _test_a4() -> void:
+	print("  -- diario, interiores, acusación y finales (A4)")
+	await Backend.new_session("A4")
+	var journal: Journal = Journal.new()
+	add_child(journal)
+	await _frames(1)
+	journal.refresh()
+	check(journal.timeline_entries().is_empty(), "línea de tiempo vacía sin evidencias")
+	check(journal.get("_accuse_btn").disabled, "no se puede acusar en acto 1")
+
+	await Backend.examine("tablero_electrico")  # 11:47 y 11:54
+	await Backend.examine("mostrador_pupuseria")  # 11:20
+	journal.refresh()
+	var times: Array[String] = []
+	for e: Dictionary in journal.timeline_entries():
+		times.append(str(e["time"]))
+	check(times == ["11:20", "11:47", "11:54"], "línea de tiempo ordenada %s" % [times])
+	check((journal.get("_ev_list") as ItemList).item_count == 2, "pestaña Evidencias con 2")
+	journal.open(2)
+	await _frames(1)
+	check(journal.is_open(), "Tab abre el diario")
+	await _press_journal()
+	check(not journal.is_open(), "Tab lo cierra")
+
+	_act3_state(["registro_electrico", "cuaderno_ventas", "surcos_ruedas"])
+	journal.refresh()
+	check(not journal.get("_accuse_btn").disabled, "en acto 3 se puede acusar")
+	var t2: Array[String] = []
+	for e: Dictionary in journal.timeline_entries():
+		t2.append(str(e["time"]))
+	check("11:54" in t2 and t2.count("11:54") == 2, "las deducciones también entran a la línea de tiempo")
+	journal.queue_free()
+
+	# Interior: la iglesia en acto 3.
+	GameState.interior_id = "iglesia"
+	GameState.interior_from = "town"
+	var interior: Node2D = (load(SceneRouter.INTERIOR) as PackedScene).instantiate() as Node2D
+	add_child(interior)
+	await _frames(3)
+	var objs: Dictionary = interior.get("objects")
+	check(objs.has("altar_mayor") and (objs["altar_mayor"] as Node2D).visible, "altar mayor dentro de la iglesia")
+	check(interior.get("doors").has("town") and interior.get("doors").has("campanario"), "puertas a la plaza y al campanario")
+	var ip: TownPlayer = interior.get("player")
+	check(ip.position.distance_to(InteriorLayout.to_world(Vector2i(10, 12))) < 1.0, "entra junto a la puerta de la plaza")
+	interior.call("examine_object", "altar_mayor")
+	await _frames(25)
+	var imb: MessageBox = interior.get("message_box")
+	check(imb.is_open() and not GameState.has_evidence("campana_funeraria"), "el altar no da nada sin la deducción")
+	imb.advance()
+	imb.advance()
+	interior.queue_free()
+	await _frames(2)
+	GameState.interior_id = "campanario"
+	GameState.interior_from = "iglesia"
+	var bell: Node2D = (load(SceneRouter.INTERIOR) as PackedScene).instantiate() as Node2D
+	add_child(bell)
+	await _frames(3)
+	check((bell.get("objects") as Dictionary).has("cuerda_campana"), "cuerda de la campana en el campanario")
+	bell.queue_free()
+	await _frames(2)
+
+	# Acusación: tope de 10 pruebas, y el final llega a GameState.
+	var many: Array = ["registro_electrico", "cuaderno_ventas", "surcos_ruedas", "mensaje_ceniza",
+		"huellas_invertidas", "liston_cruz", "llave_armario", "recorte_periodico", "bitacora_caseta",
+		"testimonio_sotana", "medalla_nina", "diario_esteban"]
+	_act3_state(many)
+	var acc: Accusation = Accusation.new()
+	add_child(acc)
+	await _frames(1)
+	acc.open()
+	await _frames(1)
+	check(acc.get("_confirm").disabled, "sin sospechoso ni decisión no se puede acusar")
+	for id: String in many:
+		acc.set_evidence(id, true)
+	check(acc.selected_evidence().size() == 10, "máximo 10 pruebas (%d)" % acc.selected_evidence().size())
+	acc.choose_suspect("cadejo")
+	acc.choose_decision("revelar")
+	check(not acc.get("_confirm").disabled, "con sospechoso y decisión se habilita Acusar")
+	await acc.confirm()
+	check(not GameState.last_ending.is_empty() and bool(GameState.world["ended"]), "el final queda en GameState")
+	check(GameState.last_ending["ending_id"] == "verdadero", "mock: 10 pruebas + revelar -> verdadero")
+	acc.queue_free()
+
+	var ending: Control = (load(SceneRouter.ENDING) as PackedScene).instantiate() as Control
+	add_child(ending)
+	await _frames(2)
+	var labels: Array[String] = []
+	for l: Node in ending.find_children("*", "Label", true, false):
+		labels.append((l as Label).text)
+	check(str(GameState.last_ending["title"]) in labels, "la escena del final muestra su título")
+	var has_bg: bool = false
+	for tr: Node in ending.find_children("*", "TextureRect", true, false):
+		has_bg = has_bg or (tr as TextureRect).texture != null
+	check(has_bg, "la escena del final tiene fondo")
+	ending.queue_free()
+	await _frames(1)
+
+
+## Unión 2: partida completa contra el motor real, por la API y la pantalla de acusación.
+## SOLO PRUEBA: lee la solución de server/data para jugar como alguien que ya sabe
+## qué presentar (el juego nunca lee ese archivo).
+func _test_full_game_http() -> void:
+	print("  -- Unión 2: partida completa contra el motor")
+	var secret: Dictionary = Paths.read_json(Paths.repo_root().path_join("server/data/case_secret.json"))
+	var t0: int = Time.get_ticks_msec()
+	await Backend.new_session("Union 2")
+	var presents: int = 0
+	for round_i: int in 12:
+		var before: String = "%d/%d/%d" % [GameState.act(), GameState.evidence_ids().size(),
+			(GameState.world["deductions"] as Array).size()]
+		for loc: Dictionary in ContentDB.world["locations"]:
+			if not GameState.is_unlocked(loc["id"]) or int(loc["act"]) > GameState.act():
+				continue
+			for obj: Dictionary in loc["objects"]:
+				await Backend.examine(obj["id"])
+		for n: Dictionary in GameState.world["npcs"]:
+			var w: Dictionary = secret["witnesses"][n["id"]]
+			var wanted: Array = w["contradicted_by"] if n["level"] == "inicial" else 				(w["confession"]["by_evidence"] if n["level"] == "confrontada" else [])
+			for ev: Variant in wanted:
+				if GameState.has_evidence(str(ev)):
+					var r: Dictionary = await Backend.present(n["id"], str(ev))
+					presents += 1
+					if not r["ok"]:
+						printerr("    present falló: ", r["error"])
+					break
+		var after: String = "%d/%d/%d" % [GameState.act(), GameState.evidence_ids().size(),
+			(GameState.world["deductions"] as Array).size()]
+		if after == before:
+			break
+	print("    %d presentaciones con LLM en %.1f s" % [presents, (Time.get_ticks_msec() - t0) / 1000.0])
+	check(GameState.act() == 3 and GameState.clock_text() == "12:47 a. m.", "se llega al Acto III (12:47 a. m.)")
+	check(GameState.can_accuse(), "el motor habilita la acusación")
+	var all_conf: bool = true
+	for n: Dictionary in GameState.world["npcs"]:
+		all_conf = all_conf and n["level"] == "confesion"
+	check(all_conf, "los 6 testigos confiesan")
+	var proofs: Array[String] = []
+	for p: Dictionary in secret["solution"]["proofs"]:
+		proofs.append(str(p["evidence_id"]))
+	var missing: Array[String] = []
+	for p: String in proofs:
+		if not GameState.has_evidence(p):
+			missing.append(p)
+	check(missing.is_empty(), "todas las pruebas de la solución se consiguen %s" % [missing])
+
+	var journal: Journal = Journal.new()
+	add_child(journal)
+	await _frames(1)
+	journal.refresh()
+	check(journal.timeline_entries().size() >= 5, "línea de tiempo con %d horas" % journal.timeline_entries().size())
+	journal.queue_free()
+
+	var acc: Accusation = Accusation.new()
+	add_child(acc)
+	await _frames(1)
+	acc.open()
+	await _frames(1)
+	acc.choose_suspect(str(secret["solution"]["culprit"]))
+	for p: String in proofs:
+		acc.set_evidence(p, true)
+	acc.choose_decision("revelar")
+	await acc.confirm()
+	check(GameState.last_ending.get("ending_id", "") == "verdadero", "final verdadero contra el motor real")
+	print("    Final: %s — %s" % [GameState.last_ending.get("title", "?"), GameState.last_ending.get("text", "")])
+	acc.queue_free()
+	await _frames(2)
+
+
+func _press_journal() -> void:
+	var ev: InputEventAction = InputEventAction.new()
+	ev.action = "journal"
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await _frames(3)
 
 
 func _test_http() -> void:

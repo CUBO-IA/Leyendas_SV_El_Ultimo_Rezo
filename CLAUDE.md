@@ -66,5 +66,8 @@ Los prompts originales de cada fase están en docs/prompts_claude_code.md. Se in
 - Cliente: prueba headless `Godot_v4.7.2-stable_win64_console.exe --headless --path game res://tests/smoke_test.tscn` (agregar `-- --backend=http` con el motor corriendo). Tras agregar PNG o class_name nuevos: `--headless --path game --import`.
 - Godot lee content/, contract/fixtures/ y assets_generated/ directo de la raíz del repo (res://..), sin copias. Modo del Backend y URL: Opciones (user://settings.cfg) o `-- --backend=http --api=URL`.
 - Placeholders: `.venv\Scripts\python tools\make_placeholders.py` (Pillow, tools/requirements.txt).
+- Arte de interiores (iglesia, campanario) y fondos de finales: `.venv\Scripts\python tools\make_story_art.py`.
+- Recorrido visual de A4 (pueblo en acto 3, iglesia, diario, acusación, final): `Godot --path game res://tests/visual_tour.tscn`.
+- Escenas a pie: game/scripts/explore/explore_base.gd (HUD, E, Tab, puertas); el pueblo y los interiores solo arman su mapa.
 - Sonidos sintetizados (sin licencias): `.venv\Scripts\python tools\make_sfx.py` -> game/assets/sfx/.
 - Arte del pueblo (baldosas, fachadas, sprites 16x24 en 4 direcciones): `.venv\Scripts\python tools\make_town_art.py`, y después `--import`. El plano está en game/scripts/town/town_layout.gd; los objetos de un lugar solo aparecen cuando el motor lo desbloquea.

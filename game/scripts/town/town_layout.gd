@@ -71,7 +71,7 @@ const WITNESS_SPOTS: Dictionary = {
 
 ## Posición de cada objeto examinable de world.json.
 const OBJECT_SPOTS: Dictionary = {
-	"puerta_iglesia": Vector2i(32, 13),
+	"puerta_iglesia": Vector2i(30, 13),
 	"suelo_plaza": Vector2i(36, 25),
 	"empedrado_plaza": Vector2i(27, 26),
 	"banca_lustrabotas": Vector2i(24, 22),
@@ -94,11 +94,12 @@ const OBJECT_SPOTS: Dictionary = {
 	"muro_cementerio": Vector2i(11, 11),
 	"orilla_quebrada": Vector2i(56, 10),
 	"piedras_quebrada": Vector2i(56, 33),
-	"puerta_lateral": Vector2i(37, 11),
-	"altar_mayor": Vector2i(30, 13),
-	"puerta_campanario": Vector2i(26, 11),
-	"cuerda_campana": Vector2i(34, 13),
-	"trampilla_campanario": Vector2i(26, 8),
+}
+# Los objetos de la iglesia y el campanario están en InteriorLayout.
+
+## Puertas del pueblo: destino -> [baldosa, texto de la pista].
+const DOORS: Dictionary = {
+	"iglesia": [Vector2i(32, 13), "Entrar a la iglesia"],
 }
 
 ## Zonas con nombre para el HUD (la primera que contiene al jugador gana).

@@ -12,6 +12,10 @@ var examined: Dictionary = {}
 ## Conversación con cada testigo: witness_id -> [{who: "player"|"npc"|"system", text, level}].
 ## Solo cliente; la usa el interrogatorio y el diario (A4).
 var transcripts: Dictionary = {}
+## Navegación entre escenas: interior al que se entra y baldosa donde reaparecer en el pueblo.
+var interior_id: String = ""
+var interior_from: String = ""
+var town_spawn: Vector2i = Vector2i(-1, -1)
 
 
 func apply_state(state: Dictionary) -> void:
@@ -30,6 +34,9 @@ func reset() -> void:
 	last_ending = {}
 	examined = {}
 	transcripts = {}
+	interior_id = ""
+	interior_from = ""
+	town_spawn = Vector2i(-1, -1)
 
 
 func add_line(witness_id: String, who: String, text: String) -> void:
@@ -49,6 +56,10 @@ func has_session() -> bool:
 
 func session_id() -> String:
 	return str(world.get("session_id", ""))
+
+
+func can_accuse() -> bool:
+	return bool(world.get("can_accuse", false)) and not bool(world.get("ended", false))
 
 
 func act() -> int:

@@ -5,8 +5,9 @@ extends Area2D
 
 const LAYER := 2
 
-@export var kind: String = "object"  ## "witness" | "object"
-@export var target_id: String = ""
+@export var kind: String = "object"  ## "witness" | "object" | "door"
+@export var target_id: String = ""  ## testigo, objeto o, en puertas, el lugar de destino ("town" = pueblo)
+@export var label: String = ""  ## texto propio para la pista (puertas)
 @export var radius: float = 16.0
 
 
@@ -23,6 +24,8 @@ func _ready() -> void:
 
 ## Texto de la pista en el HUD, p. ej. "E · Examinar Comal".
 func prompt() -> String:
+	if label != "":
+		return "E · " + label
 	var name_text: String = ContentDB.display_name(target_id)
 	if kind == "witness":
 		return "E · Hablar con %s" % name_text
