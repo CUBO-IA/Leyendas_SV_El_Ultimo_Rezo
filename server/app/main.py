@@ -7,7 +7,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +16,7 @@ from .config import Settings
 from .dialogue import SITUATIONS, Dialogue, clean_player_text, evidence_message
 from .errors import ApiError
 from .llm.provider import Provider, get_provider
+from .presence import PresenceHub
 from .store import SessionStore
 from .voice import Voice, VoiceError
 
@@ -110,6 +111,11 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
 
     app = FastAPI(title="Leyendas SV — motor", version="0.1.0", lifespan=lifespan)
     errors.install(app)
+    presence = PresenceHub()  # experimental: los jugadores se ven en el mapa
+
+    @app.websocket("/ws/presence")
+    async def ws_presence(ws: WebSocket):
+        await presence.handle(ws)
 
     @app.get("/health")
     async def health(request: Request):

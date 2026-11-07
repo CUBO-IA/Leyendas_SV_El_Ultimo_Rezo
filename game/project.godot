@@ -21,6 +21,7 @@ Backend="*res://scripts/autoload/backend.gd"
 SceneRouter="*res://scripts/autoload/scene_router.gd"
 Sound="*res://scripts/autoload/sound.gd"
 Night="*res://scripts/autoload/night.gd"
+Presence="*res://scripts/autoload/presence.gd"
 
 [debug]
 

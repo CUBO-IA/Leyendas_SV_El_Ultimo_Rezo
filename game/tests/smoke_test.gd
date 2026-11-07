@@ -24,6 +24,7 @@ func _ready() -> void:
 		await _test_night()
 		await _test_villagers()
 		await _test_cementerio()
+		await _test_presence()
 	else:
 		await _test_http()
 		await _test_full_game_http()
@@ -723,6 +724,42 @@ func _test_cementerio() -> void:
 	mb.advance()
 	await _frames(1)
 	room.queue_free()
+	await _frames(2)
+
+
+## Experimental: otros jugadores en el mapa (Presence), simulando los mensajes del motor.
+func _test_presence() -> void:
+	print("  -- presencia (experimental)")
+	check(Presence.ws_url("http://100.79.57.108:8000") == "ws://100.79.57.108:8000/ws/presence"
+		and Presence.ws_url("https://x.ts.net/") == "wss://x.ts.net/ws/presence", "URL del canal de presencia")
+	await Backend.new_session("Presencia")
+	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
+	add_child(town)
+	await _frames(3)
+	check(not Presence.is_online(), "en modo demo no se conecta")
+	Presence.handle_message(JSON.stringify({"t": "welcome", "id": "yo"}))
+	Presence.handle_message(JSON.stringify({"t": "state", "players": [
+		{"id": "p2", "name": "Fae", "scene": "town", "x": 500, "y": 380, "f": "left", "m": false}]}))
+	await _frames(2)
+	var remotes: Dictionary = town.get("remotes")
+	check(remotes.has("p2") and (remotes["p2"] as RemotePlayer).peer_name == "Fae", "aparece Fae en el pueblo")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "town", "x": 520, "y": 380, "f": "right", "m": true}))
+	await _frames(30)
+	var fae: RemotePlayer = remotes["p2"]
+	check(fae.position.distance_to(Vector2(520, 380)) < 3.0 and fae.facing == "right", "Fae camina hasta donde dice el motor")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "yo", "name": "Yo", "scene": "town", "x": 1, "y": 1}))
+	check(not remotes.has("yo"), "no me dibujo a mí mismo")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "iglesia", "x": 100, "y": 100}))
+	await _frames(2)
+	check(not remotes.has("p2"), "si entra a la iglesia, desaparece del pueblo")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "town", "x": 500, "y": 380}))
+	Presence.handle_message(JSON.stringify({"t": "leave", "id": "p2"}))
+	await _frames(2)
+	check(not remotes.has("p2") and Presence.others.is_empty(), "si se desconecta, se va del mapa")
+	Presence.handle_message("esto no es json")
+	check(Presence.others.is_empty(), "mensajes malos se ignoran")
+	Presence.my_id = ""
+	town.queue_free()
 	await _frames(2)
 
 

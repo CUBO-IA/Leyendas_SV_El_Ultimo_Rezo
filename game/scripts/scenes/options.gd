@@ -7,6 +7,8 @@ var _result: Label
 var _voice: CheckBox
 var _mic: CheckBox
 var _mic_review: CheckBox
+var _net_name: LineEdit
+var _net_on: CheckBox
 var _sliders: Dictionary = {}
 
 
@@ -15,31 +17,51 @@ func _ready() -> void:
 	UiKit.background(self)
 	var col: VBoxContainer = UiKit.centered_column(self, 14)
 	col.add_child(UiKit.label("Opciones", 44, UiKit.ACCENT))
+	# Dos columnas para que todo quepa en 1280x720: motor y red | sonido.
+	var cols: HBoxContainer = HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 40)
+	col.add_child(cols)
+	var left: VBoxContainer = VBoxContainer.new()
+	left.add_theme_constant_override("separation", 12)
+	cols.add_child(left)
+	var right: VBoxContainer = VBoxContainer.new()
+	right.add_theme_constant_override("separation", 12)
+	cols.add_child(right)
 
-	col.add_child(UiKit.label("Motor de diálogo", 20, UiKit.MUTED))
+	left.add_child(UiKit.label("Motor de diálogo", 20, UiKit.MUTED))
 	_mode = OptionButton.new()
 	_mode.add_item("Mock (fixtures, sin motor)")
 	_mode.add_item("HTTP (motor real)")
 	_mode.selected = Backend.MODES.find(Backend.mode)
-	_mode.custom_minimum_size = Vector2(520, 48)
-	col.add_child(_mode)
+	_mode.custom_minimum_size = Vector2(480, 46)
+	left.add_child(_mode)
 
-	col.add_child(UiKit.label("API_BASE_URL", 20, UiKit.MUTED))
+	left.add_child(UiKit.label("API_BASE_URL", 20, UiKit.MUTED))
 	_url = LineEdit.new()
 	_url.text = Backend.base_url
 	_url.placeholder_text = Backend.DEFAULT_URL
-	_url.custom_minimum_size = Vector2(520, 48)
-	col.add_child(_url)
+	_url.custom_minimum_size = Vector2(480, 46)
+	left.add_child(_url)
 
-	col.add_child(UiKit.label("Sonido", 20, UiKit.MUTED))
+	left.add_child(UiKit.label("En red (experimental)", 20, UiKit.MUTED))
+	_net_on = _check("Ver a los demás jugadores en el mapa", Presence.enabled)
+	left.add_child(_net_on)
+	_net_name = LineEdit.new()
+	_net_name.placeholder_text = "Tu nombre en red (%s)" % Presence.default_name()
+	_net_name.text = Presence.player_name
+	_net_name.max_length = 20
+	_net_name.custom_minimum_size = Vector2(480, 44)
+	left.add_child(_net_name)
+
+	right.add_child(UiKit.label("Sonido", 20, UiKit.MUTED))
 	_voice = _check("Voz de los personajes (Magpie TTS)", Sound.voice_enabled)
-	col.add_child(_voice)
-	_mic = _check("Hablar con el micrófono (botón Hablar o F1 en el interrogatorio)", Sound.mic_enabled)
-	col.add_child(_mic)
+	right.add_child(_voice)
+	_mic = _check("Hablar con el micrófono (botón Hablar o F1)", Sound.mic_enabled)
+	right.add_child(_mic)
 	_mic_review = _check("Revisar la pregunta dictada antes de enviarla", Sound.mic_review)
-	col.add_child(_mic_review)
+	right.add_child(_mic_review)
 	for bus: String in Sound.BUSES:
-		col.add_child(_slider(bus))
+		right.add_child(_slider(bus))
 
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -86,6 +108,8 @@ func _apply() -> void:
 	Sound.voice_enabled = _voice.button_pressed
 	Sound.mic_enabled = _mic.button_pressed
 	Sound.mic_review = _mic_review.button_pressed
+	Presence.enabled = _net_on.button_pressed
+	Presence.player_name = _net_name.text.strip_edges()
 	Backend.set_mode(Backend.MODES[_mode.selected])
 	Backend.set_base_url(_url.text)
 	_url.text = Backend.base_url
@@ -114,6 +138,7 @@ func _on_save() -> void:
 	_apply()
 	Backend.save_settings()
 	Sound.save_settings()
+	Presence.save_settings()
 	SceneRouter.go(SceneRouter.TITLE)
 
 
