@@ -24,6 +24,7 @@ class Settings:
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     demo_mode: bool = False
+    witnesses: str = "all"  # all: los 10 testigos | mvp: solo los 6 del MVP
 
     # Diálogo
     llm_provider: str = "ollama"  # ollama | nvidia
@@ -64,6 +65,7 @@ class Settings:
             api_host=e("API_HOST", d.api_host),
             api_port=int(e("API_PORT", d.api_port)),
             demo_mode=_bool(e("DEMO_MODE"), d.demo_mode),
+            witnesses="mvp" if e("WITNESSES", d.witnesses).strip().lower() == "mvp" else "all",
             llm_provider=e("LLM_PROVIDER", d.llm_provider).strip().lower(),
             llm_model=e("LLM_MODEL", d.llm_model),
             ollama_url=e("OLLAMA_URL", d.ollama_url).rstrip("/"),

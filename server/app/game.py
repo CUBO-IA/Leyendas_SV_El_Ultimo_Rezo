@@ -14,12 +14,13 @@ def new_session_id() -> str:
     return uuid.uuid4().hex[:16]
 
 
-def new_world_state(session_id: str, demo: bool = False) -> tuple[dict, dict]:
+def new_world_state(session_id: str, demo: bool = False, only_mvp: bool = False) -> tuple[dict, dict]:
     """Devuelve (estado público WorldState, estado privado)."""
     case = data.secret_case()
     act1 = case["acts"]["1"]
+    witnesses = data.active_witnesses(only_mvp)
     npcs = []
-    for wid in data.active_witnesses():
+    for wid in witnesses:
         start = data.witness_secret(wid)["start"]
         npcs.append({"id": wid, "level": "inicial", "trust": start["trust"],
                      "fear": start["fear"], "met": False})
@@ -36,5 +37,5 @@ def new_world_state(session_id: str, demo: bool = False) -> tuple[dict, dict]:
     }
     if demo:
         public["demo"] = True
-    private = {"history": {wid: [] for wid in data.active_witnesses()}, "examined": []}
+    private = {"history": {wid: [] for wid in witnesses}, "examined": []}
     return public, private

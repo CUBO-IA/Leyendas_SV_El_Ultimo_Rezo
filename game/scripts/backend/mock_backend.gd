@@ -64,6 +64,11 @@ func handle(kind: String, body: Dictionary) -> Dictionary:
 func _session(body: Dictionary) -> Dictionary:
 	var demo: bool = bool(body.get("demo", false))
 	state = fixture("world_state__demo" if demo else "world_state__nueva_partida")
+	# Las fixtures traen los 6 del MVP; el motor (WITNESSES=all) suma los 4 restantes.
+	var have: Array = (state["npcs"] as Array).map(func(n: Dictionary) -> String: return str(n["id"]))
+	for id: String in ContentDB.witness_ids():
+		if id not in have:
+			(state["npcs"] as Array).append({"id": id, "level": "inicial", "trust": 5, "fear": 4, "met": false})
 	_counter += 1
 	state["session_id"] = "mock-%04d" % _counter
 	if demo:

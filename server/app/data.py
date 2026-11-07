@@ -62,11 +62,14 @@ def witness_secret(witness_id: str) -> dict:
     return secret_case()["witnesses"][witness_id]
 
 
-# Orden de los NPC en WorldState, el mismo de contract/fixtures/world_state__*.json.
+# Orden de los NPC en WorldState: primero los del MVP, como en contract/fixtures/world_state__*.json,
+# y después los 4 restantes (pistas de las otras leyendas).
 MVP_ORDER = ["chonita", "tonito", "ramirez", "padre_mauricio", "alcides", "mercedes"]
+EXTRA_ORDER = ["beto", "pilo", "chente", "chepe"]
+ORDER = MVP_ORDER + EXTRA_ORDER
 
 
-def active_witnesses() -> list[str]:
-    """Testigos jugables (en el MVP, los marcados mvp), en el orden del contrato."""
-    ids = [w["id"] for w in characters()["witnesses"] if w["mvp"]]
-    return sorted(ids, key=lambda i: MVP_ORDER.index(i) if i in MVP_ORDER else len(MVP_ORDER))
+def active_witnesses(only_mvp: bool = False) -> list[str]:
+    """Testigos jugables en el orden del contrato: los 10, o solo los 6 del MVP (WITNESSES=mvp)."""
+    ids = [w["id"] for w in characters()["witnesses"] if w["mvp"] or not only_mvp]
+    return sorted(ids, key=lambda i: ORDER.index(i) if i in ORDER else len(ORDER))

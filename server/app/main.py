@@ -129,7 +129,7 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
         body = body or SessionRequest()
         demo = bool(body.demo) or settings.demo_mode
         sid = game.new_session_id()
-        public, private = game.new_world_state(sid, demo=demo)
+        public, private = game.new_world_state(sid, demo=demo, only_mvp=settings.witnesses == "mvp")
         private["player_name"] = body.player_name or "Investigador"
         request.app.state.store.create(sid, public, private)
         return public

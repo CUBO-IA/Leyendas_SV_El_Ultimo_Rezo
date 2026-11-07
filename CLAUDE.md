@@ -38,6 +38,7 @@ Juego de investigación sobrenatural en Godot 4.7.2 (GDScript), ambientado en Sa
 ## Alcance
 - MVP: Acto I y Acto III; 6 testigos (chonita, tonito, ramirez, padre_mauricio, alcides, mercedes); 6 sospechosos; 3 finales (malo, gris, verdadero).
 - Extras, en este orden: voz, Acto II (cementerio y quebrada), los 4 testigos restantes, sistema de miedo, campanadas por tiempo.
+- Hecho: los 4 testigos restantes (beto, pilo, chente, chepe) están en la partida por defecto (WITNESSES=all en .env; WITNESSES=mvp vuelve a 6). Van después de los 6 del MVP en WorldState.npcs (server/app/data.py ORDER); las fixtures siguen describiendo la partida MVP. Sus pistas apuntan a las otras leyendas y ningún final las exige; Chepe necesita la quebrada (acto 2). El mock agrega los 4 a la fixture de sesión.
 
 ## Orden de fases (un desarrollador, una laptop)
 Los prompts originales de cada fase están en docs/prompts_claude_code.md. Se intercalan así para tener algo jugable cuanto antes:

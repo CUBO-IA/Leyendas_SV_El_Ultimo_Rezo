@@ -48,14 +48,38 @@ def test_nueva_sesion_sin_cuerpo(client):
     assert "demo" not in ws
 
 
-def test_nueva_sesion_igual_a_la_fixture_salvo_el_id(client):
+def test_nueva_sesion_igual_a_la_fixture_salvo_el_id(make_client):
+    # La fixture describe la partida del MVP (6 testigos): WITNESSES=mvp.
     import json
     from .conftest import ROOT
     fixture = json.loads((ROOT / "contract/fixtures/world_state__nueva_partida.json")
                          .read_text(encoding="utf-8"))
-    ws = client.post("/session", json={"player_name": "Investigador"}).json()
+    ws = make_client(witnesses="mvp").post("/session", json={"player_name": "Investigador"}).json()
     ws["session_id"] = fixture["session_id"]
     assert ws == fixture
+
+
+def test_nueva_sesion_con_los_10_testigos(client):
+    # Por defecto (WITNESSES=all): los 6 del MVP en el orden de la fixture y luego los 4 restantes.
+    import json
+    from .conftest import ROOT
+    fixture = json.loads((ROOT / "contract/fixtures/world_state__nueva_partida.json")
+                         .read_text(encoding="utf-8"))
+    ws = client.post("/session", json={}).json()
+    assert_valid("world_state", ws)
+    ids = [n["id"] for n in ws["npcs"]]
+    assert ids == [n["id"] for n in fixture["npcs"]] + ["beto", "pilo", "chente", "chepe"]
+    assert ws["npcs"][:6] == fixture["npcs"]
+    chepe = ws["npcs"][-1]
+    assert chepe == {"id": "chepe", "level": "inicial", "trust": 4, "fear": 5, "met": False}
+
+
+def test_witnesses_desde_el_env(monkeypatch):
+    from server.app.config import Settings
+    monkeypatch.setenv("WITNESSES", "MVP")
+    assert Settings.from_env(None).witnesses == "mvp"
+    monkeypatch.setenv("WITNESSES", "cualquier cosa")
+    assert Settings.from_env(None).witnesses == "all"
 
 
 def test_sesion_demo(client):

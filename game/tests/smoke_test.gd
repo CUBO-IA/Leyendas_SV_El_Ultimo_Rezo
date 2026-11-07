@@ -86,7 +86,7 @@ func _test_mock_flow() -> void:
 
 	r = await Backend.new_session("Prueba")
 	check(r["ok"] and GameState.has_session(), "nueva sesión")
-	check((GameState.world["npcs"] as Array).size() == 6, "6 NPC en la partida")
+	check((GameState.world["npcs"] as Array).size() == 10, "10 NPC en la partida (6 MVP + 4)")
 	check(GameState.act() == 1 and GameState.evidence_ids().is_empty(), "acto 1, sin evidencias")
 
 	r = await Backend.talk("chonita", "¿Vio algo raro?")
@@ -164,7 +164,7 @@ func _test_town() -> void:
 	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
 	add_child(town)
 	await _frames(3)
-	check(town.get("witnesses").size() == 6, "6 testigos MVP en el pueblo")
+	check(town.get("witnesses").size() == 10, "los 10 testigos en el pueblo")
 	var visible_ids: Array[String] = []
 	for id: String in town.get("objects"):
 		if (town.get("objects")[id] as Node2D).visible:
@@ -497,7 +497,7 @@ func _test_full_game_http() -> void:
 	var all_conf: bool = true
 	for n: Dictionary in GameState.world["npcs"]:
 		all_conf = all_conf and n["level"] == "confesion"
-	check(all_conf, "los 6 testigos confiesan")
+	check(all_conf, "los 10 testigos confiesan")
 	var proofs: Array[String] = []
 	for p: Dictionary in secret["solution"]["proofs"]:
 		proofs.append(str(p["evidence_id"]))
@@ -672,7 +672,7 @@ func _test_http() -> void:
 	check(r["data"]["status"] in ["ok", "degraded"], "health con status válido")
 	r = await Backend.new_session("Prueba HTTP")
 	check(r["ok"] and GameState.has_session(), "POST /session")
-	check((GameState.world["npcs"] as Array).size() == 6, "6 NPC desde el motor")
+	check((GameState.world["npcs"] as Array).size() == 10, "10 NPC desde el motor")
 	var sid: String = GameState.session_id()
 	r = await Backend.get_session()
 	check(r["ok"] and r["data"]["session_id"] == sid, "GET /session/{id}")

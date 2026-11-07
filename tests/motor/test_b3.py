@@ -93,7 +93,7 @@ def test_objeto_sin_evidencia(client):
 def test_alcides_contradiccion_como_la_fixture(make_client):
     fx = fixture("present_response__alcides_contradiccion")
     c = make_client(FakeProvider(reply={"reply": fx["reply"], "emotion": fx["emotion"],
-                                        "trust_delta": 2, "fear_delta": -2}))
+                                        "trust_delta": 2, "fear_delta": -2}), witnesses="mvp")
     sid = new(c)
     examine(c, sid, "tablero_electrico")
     examine(c, sid, "empedrado_plaza")
@@ -110,7 +110,7 @@ def test_alcides_contradiccion_como_la_fixture(make_client):
 def test_alcides_sin_relacion_como_la_fixture(make_client):
     fx = fixture("present_response__alcides_sin_relacion")
     c = make_client(FakeProvider(reply={"reply": fx["reply"], "emotion": fx["emotion"],
-                                        "trust_delta": 0, "fear_delta": 0}))
+                                        "trust_delta": 0, "fear_delta": 0}), witnesses="mvp")
     sid = new(c)
     examine(c, sid, "tablero_electrico")
     examine(c, sid, "empedrado_plaza")
@@ -127,7 +127,7 @@ def test_presentar_errores(client):
     cases = [
         ({"npc_id": "alcides", "evidence_id": "registro_electrico"}, "evidence_not_owned", 409),
         ({"npc_id": "alcides", "evidence_id": "no_existe"}, "bad_evidence", 400),
-        ({"npc_id": "chepe", "evidence_id": "registro_electrico"}, "bad_npc", 400),
+        ({"npc_id": "nadie", "evidence_id": "registro_electrico"}, "bad_npc", 400),
     ]
     examine(client, sid, "puerta_iglesia")
     for body, code, status in cases:
