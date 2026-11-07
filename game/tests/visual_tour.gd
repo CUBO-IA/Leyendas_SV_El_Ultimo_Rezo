@@ -32,6 +32,13 @@ func _ready() -> void:
 			GameState.town_spawn = Vector2i(int(xy[0]), int(xy[1]))
 		elif arg.begins_with("--fear="):  # -- --fear=90 para ver la viñeta del miedo
 			Night.add_fear(float(arg.substr(7)))
+	for arg: String in OS.get_cmdline_user_args():  # -- --interior=cementerio: solo esa sala
+		if arg.begins_with("--interior="):
+			GameState.interior_id = arg.substr(11)
+			GameState.interior_from = "town"
+			await _show(SceneRouter.INTERIOR, "sala " + GameState.interior_id, 30.0)
+			Sound.quit_clean()
+			return
 	var town: Node = await _show(SceneRouter.TOWN, "1 pueblo frente a la iglesia")
 	var inter: Interrogation = town.get("interrogation")
 	inter.open("chonita")

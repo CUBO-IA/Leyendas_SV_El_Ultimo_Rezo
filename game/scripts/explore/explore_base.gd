@@ -45,6 +45,8 @@ const WHISPERS: Array[String] = [
 ]
 var lamp_points: Array[Vector2] = []  ## faroles y velas (las subclases los agregan)
 var fear_overlay: FearOverlay
+var fog_overlay: FogOverlay
+var act_card: ActCard
 var _whisper_wait: float = 20.0
 var _whisper_i: int = 0
 var _calm_hint_shown: bool = false
@@ -61,6 +63,8 @@ func _ready() -> void:
 	add_child(world)
 	move_child(world, mini(1, get_child_count() - 1))
 
+	fog_overlay = FogOverlay.new()
+	add_child(fog_overlay)
 	fear_overlay = FearOverlay.new()
 	add_child(fear_overlay)
 	hud = Hud.new()
@@ -88,6 +92,10 @@ func _ready() -> void:
 	Night.fear_changed.connect(_on_fear)
 	Night.active = true
 	_on_fear(Night.fear)
+	act_card = ActCard.new()
+	add_child(act_card)
+	fog_overlay.set_density(_fog_density(), true)
+	_maybe_show_act_card()
 
 	_known_unlocked = (GameState.world.get("unlocked_locations", []) as Array).duplicate()
 	_known_act = GameState.act()
@@ -133,6 +141,20 @@ func _process(delta: float) -> void:
 			_click_target = null
 	_update_hover()
 	_update_night(delta)
+	fog_overlay.set_density(_fog_density())
+
+
+## Densidad de la niebla (0-1). El pueblo la sube desde el Acto II; el cementerio siempre.
+func _fog_density() -> float:
+	return 0.0
+
+
+## Tarjeta del acto, una vez por acto y partida.
+func _maybe_show_act_card() -> void:
+	var act: int = GameState.act()
+	if act_card != null and act > GameState.act_card_seen:
+		GameState.act_card_seen = act
+		act_card.show_act(act, Night.clock_text())
 
 
 func _update_night(delta: float) -> void:
@@ -323,6 +345,7 @@ func _on_world_changed(_state: Dictionary) -> void:
 	if act > _known_act:
 		_known_act = act
 		Sound.bell(3)  # cambia el acto: el campanario vuelve a sonar
+		_maybe_show_act_card()
 	hud.set_accuse_ready(GameState.can_accuse())
 	if GameState.can_accuse() and not _accuse_announced:
 		_accuse_announced = true

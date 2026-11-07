@@ -20,6 +20,8 @@ var town_spawn: Vector2i = Vector2i(-1, -1)
 var bell_rung: bool = false
 ## Vecinos de ambiente: cuántas veces se le ha hablado a cada uno (rota sus frases).
 var chatter: Dictionary = {}
+## Último acto cuya tarjeta (ActCard) ya se mostró.
+var act_card_seen: int = 0
 
 
 func apply_state(state: Dictionary) -> void:
@@ -43,6 +45,7 @@ func reset() -> void:
 	town_spawn = Vector2i(-1, -1)
 	bell_rung = false
 	chatter = {}
+	act_card_seen = 0
 
 
 func add_line(witness_id: String, who: String, text: String) -> void:

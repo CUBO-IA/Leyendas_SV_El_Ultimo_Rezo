@@ -42,6 +42,13 @@ func _zone_at(pos: Vector2) -> String:
 	return TownLayout.zone_at(pos)
 
 
+## Niebla desde el Acto II, más espesa en el cementerio y la quebrada.
+func _fog_density() -> float:
+	if GameState.act() < 2:
+		return 0.0
+	return 0.55 if _zone in ["cementerio", "quebrada"] else 0.3
+
+
 func _leave_to(to: String) -> void:
 	# Al volver, reaparece en la baldosa frente a la puerta por la que salió.
 	if TownLayout.DOORS.has(to):

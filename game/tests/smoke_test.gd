@@ -23,6 +23,7 @@ func _ready() -> void:
 		await _test_sound()
 		await _test_night()
 		await _test_villagers()
+		await _test_cementerio()
 	else:
 		await _test_http()
 		await _test_full_game_http()
@@ -263,13 +264,28 @@ func _test_town() -> void:
 	await _press_cancel()
 	check(not pm.is_open() and not player.frozen, "Esc cierra la pausa")
 
-	# Al desbloquearse el acto 2, aparecen cementerio y quebrada.
+	# Acto I: tarjeta del acto al llegar; el portón del cementerio está cerrado.
+	var card: ActCard = town.get("act_card")
+	check("Acto I" in card.shown_text() or GameState.act_card_seen == 1, "tarjeta del Acto I al empezar")
+	check(not town.get("objects").has("tumba_sin_nombre") and town.get("doors").has("cementerio"), "el cementerio tiene portón (sus objetos están adentro)")
+	check(is_zero_approx(float(town.call("_fog_density"))), "sin niebla en el Acto I")
+	town.call("use_door", "cementerio")
+	await _frames(2)
+	var mb0: MessageBox = town.get("message_box")
+	check(mb0.is_open(), "en el Acto I el portón del cementerio está cerrado")
+	mb0.advance()
+	mb0.advance()
+	await _frames(1)
+
+	# Al desbloquearse el acto 2, se abren cementerio y quebrada, cae la niebla y sale su tarjeta.
 	var st: Dictionary = GameState.world.duplicate(true)
 	st["act"] = 2
 	(st["unlocked_locations"] as Array).append_array(["cementerio", "quebrada"])
 	GameState.apply_state(st)
 	await _frames(1)
-	check((town.get("objects")["tumba_sin_nombre"] as Node2D).visible, "acto 2 muestra el cementerio")
+	check((town.get("objects")["orilla_quebrada"] as Node2D).visible, "acto 2 muestra la quebrada")
+	check("Acto II" in card.shown_text() and GameState.act_card_seen == 2, "tarjeta del Acto II")
+	check(float(town.call("_fog_density")) > 0.2, "niebla en el pueblo desde el Acto II")
 	check(not GameState.is_unlocked("iglesia"), "la iglesia sigue cerrada en acto 2")
 	town.call("use_door", "iglesia")
 	await _frames(2)
@@ -675,6 +691,38 @@ func _test_villagers() -> void:
 	check(neto.next_line(1, 0) == first and neto.next_line(1, 1) != first, "la siguiente vez dice otra frase")
 	check(neto.next_line(2, 0) == str(neto.data["lines"]["2"][0]), "en el acto II cambian sus frases")
 	town.queue_free()
+	await _frames(2)
+
+
+## Acto II: el cementerio como escena propia (se entra por el portón del pueblo).
+func _test_cementerio() -> void:
+	print("  -- acto II: el cementerio")
+	await Backend.new_session("Cementerio")
+	var st: Dictionary = GameState.world.duplicate(true)
+	st["act"] = 2
+	st["clock"] = "00:13"
+	(st["unlocked_locations"] as Array).append_array(["cementerio", "quebrada"])
+	GameState.apply_state(st)
+	(Backend.get("_mock") as MockBackend).state = st.duplicate(true)
+	GameState.interior_id = "cementerio"
+	GameState.interior_from = "town"
+	var room: Node2D = (load(SceneRouter.INTERIOR) as PackedScene).instantiate() as Node2D
+	add_child(room)
+	await _frames(10)  # da tiempo a que la escena procese y avise a Night dónde está
+	var objs: Dictionary = room.get("objects")
+	check(objs.has("tumba_sin_nombre") and objs.has("muro_cementerio") and (objs["tumba_sin_nombre"] as Node2D).visible, "la tumba sin nombre y el muro están en el cementerio")
+	check(room.get("doors").has("town"), "la reja vuelve al pueblo")
+	check(float(room.call("_fog_density")) >= 0.5 and room.call("_ambience_kind") == "town", "niebla y viento en el cementerio")
+	check(Night.place == "cementerio" and (room.get("lamp_points") as Array).size() == 3, "el cementerio da miedo; sus 3 velas calman")
+	check(room.get_node_or_null("World/P_mausoleo") != null or room.find_child("P_mausoleo", true, false) != null, "mausoleo, lápidas y cruces")
+	room.call("examine_object", "tumba_sin_nombre")  # espera a que se cierre la caja: no se espera aquí
+	await _frames(25)
+	check(GameState.has_evidence("tierra_removida"), "examinar la tumba sin nombre da la tierra removida")
+	var mb: MessageBox = room.get("message_box")
+	mb.advance()
+	mb.advance()
+	await _frames(1)
+	room.queue_free()
 	await _frames(2)
 
 

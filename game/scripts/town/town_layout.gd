@@ -90,16 +90,15 @@ const OBJECT_SPOTS: Dictionary = {
 	"asiento_bus": Vector2i(6, 34),
 	"tablero_rutas": Vector2i(8, 34),
 	"carreton_beto": Vector2i(16, 34),
-	"tumba_sin_nombre": Vector2i(4, 11),
-	"muro_cementerio": Vector2i(11, 11),
 	"orilla_quebrada": Vector2i(56, 10),
 	"piedras_quebrada": Vector2i(56, 33),
 }
-# Los objetos de la iglesia y el campanario están en InteriorLayout.
+# Los objetos de la iglesia, el campanario y el cementerio están en InteriorLayout.
 
 ## Puertas del pueblo: destino -> [baldosa, texto de la pista].
 const DOORS: Dictionary = {
 	"iglesia": [Vector2i(32, 13), "Entrar a la iglesia"],
+	"cementerio": [Vector2i(7, 11), "Entrar al cementerio"],  # se abre en el acto II
 }
 
 ## Zonas con nombre para el HUD (la primera que contiene al jugador gana).

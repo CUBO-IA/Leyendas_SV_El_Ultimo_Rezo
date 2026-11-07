@@ -21,7 +21,9 @@ END = ROOT / "game" / "assets" / "endings"
 T = 16
 OUTLINE = (16, 12, 20)
 GLOW = (255, 196, 92)
-INTERIOR_TILES = ["stone", "stone2", "wood", "wood2", "carpet", "wall", "wall_window"]
+# Los nuevos van al final para no mover los índices de los anteriores (InteriorLayout.Tile).
+INTERIOR_TILES = ["stone", "stone2", "wood", "wood2", "carpet", "wall", "wall_window",
+                  "grass", "grass2", "path"]
 
 
 def tiles() -> None:
@@ -43,6 +45,18 @@ def tiles() -> None:
             for y in (3, 7, 11, 15):
                 d.line([0, y, T, y], fill=(80, 52, 32))
             d.point((rnd.randrange(T), rnd.randrange(T)), fill=(70, 44, 26))
+        elif name.startswith("grass"):  # pasto del cementerio, de noche
+            base = (38, 56, 42) if name == "grass" else (34, 50, 38)
+            d.rectangle([0, 0, T, T], fill=base)
+            for _ in range(5):
+                x, y = rnd.randrange(T), rnd.randrange(2, T)
+                d.line([x, y, x, y - 2], fill=(52, 76, 56))
+        elif name == "path":  # sendero de tierra
+            d.rectangle([0, 0, T, T], fill=(86, 70, 54))
+            for _ in range(4):
+                x, y = rnd.randrange(1, T - 1), rnd.randrange(1, T - 1)
+                d.point((x, y), fill=(110, 96, 80))
+                d.point((x + 1, y), fill=(66, 54, 42))
         elif name == "carpet":
             d.rectangle([0, 0, T, T], fill=(130, 30, 40))
             d.line([1, 0, 1, T], fill=(200, 160, 60))
@@ -222,9 +236,87 @@ def endings() -> None:
         fn().resize((1280, 720), Image.NEAREST).save(END / f"{name}.png")
 
 
+def cemetery_props() -> None:
+    """Utilería del cementerio (Acto II)."""
+    p = INT / "props"
+    p.mkdir(parents=True, exist_ok=True)
+    stone, stone_d = (150, 146, 140), (110, 106, 102)
+    # lápida con cruz grabada (1 baldosa x 20 px)
+    im = Image.new("RGBA", (16, 20), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([1, 0, 14, 19], radius=6, fill=OUTLINE)
+    d.rounded_rectangle([2, 1, 13, 18], radius=5, fill=stone)
+    d.rectangle([2, 15, 13, 18], fill=stone_d)
+    d.line([7, 4, 7, 12], fill=stone_d)
+    d.line([5, 6, 9, 6], fill=stone_d)
+    im.save(p / "lapida.png")
+    # cruz de madera torcida
+    im = Image.new("RGBA", (16, 24), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(6, 23), (9, 23), (11, 1), (8, 1)], fill=OUTLINE)
+    d.polygon([(7, 22), (8, 22), (10, 2), (9, 2)], fill=(110, 76, 46))
+    d.polygon([(2, 9), (14, 6), (14, 9), (2, 12)], fill=OUTLINE)
+    d.polygon([(3, 10), (13, 7), (13, 8), (3, 11)], fill=(120, 84, 52))
+    im.save(p / "cruz.png")
+    # mausoleo (3x3)
+    im = Image.new("RGBA", (48, 52), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(2, 16), (24, 2), (46, 16)], fill=OUTLINE)
+    d.polygon([(5, 15), (24, 4), (43, 15)], fill=(160, 154, 146))
+    d.rectangle([4, 16, 44, 51], fill=OUTLINE)
+    d.rectangle([5, 17, 43, 50], fill=(140, 134, 126))
+    d.rectangle([17, 26, 31, 50], fill=(30, 26, 34))
+    d.line([24, 26, 24, 50], fill=(60, 56, 64))
+    d.line([22, 8, 26, 8], fill=(200, 160, 60))
+    d.line([24, 6, 24, 12], fill=(200, 160, 60))
+    for x in (8, 38):
+        d.rectangle([x, 20, x + 2, 50], fill=(170, 164, 156))
+    im.save(p / "mausoleo.png")
+    # tumba sin nombre: montículo de tierra recién removida, sin lápida (2x1)
+    im = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse([0, 2, 31, 15], fill=OUTLINE)
+    d.ellipse([1, 3, 30, 14], fill=(92, 64, 40))
+    for x, y in ((6, 6), (12, 9), (20, 5), (25, 9), (16, 11)):
+        d.rectangle([x, y, x + 2, y + 1], fill=(120, 88, 58))
+    d.line([27, 0, 30, 10], fill=(150, 150, 160))  # pala clavada
+    d.rectangle([25, 0, 29, 1], fill=(100, 70, 40))
+    im.save(p / "tumba.png")
+    # ciprés (1x3)
+    im = Image.new("RGBA", (16, 44), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse([1, 0, 14, 40], fill=OUTLINE)
+    d.ellipse([2, 1, 13, 39], fill=(26, 52, 40))
+    d.ellipse([5, 6, 10, 30], fill=(34, 66, 50))
+    d.rectangle([6, 38, 9, 43], fill=(70, 50, 34))
+    im.save(p / "cipres.png")
+    # reja del cementerio (salida al pueblo)
+    im = Image.new("RGBA", (32, 30), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, 31, 29], fill=(0, 0, 0, 0))
+    for x in range(1, 31, 5):
+        d.line([x, 3, x, 29], fill=(30, 30, 38), width=2)
+        d.polygon([(x - 1, 3), (x + 1, 0), (x + 2, 3)], fill=(30, 30, 38))
+    d.line([0, 10, 31, 10], fill=(30, 30, 38), width=2)
+    d.line([0, 22, 31, 22], fill=(30, 30, 38), width=2)
+    im.save(p / "reja.png")
+    # flores de cempasúchil sobre una tumba
+    im = Image.new("RGBA", (12, 8), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for x, y in ((1, 3), (4, 1), (7, 3), (4, 5), (8, 0)):
+        d.ellipse([x, y, x + 3, y + 3], fill=(232, 138, 44))
+        d.point((x + 1, y + 1), fill=(255, 200, 80))
+    im.save(p / "flores.png")
+
+
 def main() -> None:
+    import sys
     tiles()
     props()
+    cemetery_props()
+    if "--interior" in sys.argv:  # solo interiores (sin rehacer los finales)
+        print("Interiores en", INT)
+        return
     endings()
     print("Interiores en", INT, "· finales en", END)
 

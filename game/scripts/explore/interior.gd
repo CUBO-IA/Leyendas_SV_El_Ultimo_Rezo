@@ -41,7 +41,7 @@ func _build_map() -> void:
 	var spawns: Dictionary = room["spawns"]
 	var spawn: Vector2i = spawns.get(GameState.interior_from, spawns.values()[0])
 	spawn_player(InteriorLayout.to_world(spawn), Rect2i(Vector2i.ZERO, size * InteriorLayout.TILE), false)
-	add_night(DIM)
+	add_night(room.get("dim", DIM))
 
 
 func _zone_at(_pos: Vector2) -> String:
@@ -49,7 +49,12 @@ func _zone_at(_pos: Vector2) -> String:
 
 
 func _ambience_kind() -> String:
-	return "interior"
+	# Las salas al aire libre (el cementerio) suenan como el pueblo: con viento.
+	return "town" if InteriorLayout.ROOMS[room_id].get("fog", false) else "interior"
+
+
+func _fog_density() -> float:
+	return 0.5 if InteriorLayout.ROOMS[room_id].get("fog", false) else 0.0
 
 
 func _here() -> String:
@@ -71,16 +76,18 @@ func _build_floor(room: Dictionary, size: Vector2i) -> void:
 	add_child(ground)
 	var base: int = room["floor"]
 	var carpet: Rect2i = room["carpet"]
+	var carpet_tile: int = room.get("carpet_tile", InteriorLayout.Tile.CARPET)
+	var windows: bool = room.get("windows", true)
 	for y: int in size.y:
 		for x: int in size.x:
 			var cell: Vector2i = Vector2i(x, y)
 			var t: int = base + (1 if (x * 7 + y * 3) % 5 == 0 else 0)  # variante 2 a veces
 			if y < 2:
-				t = InteriorLayout.Tile.WALL_WINDOW if x % 4 == 2 else InteriorLayout.Tile.WALL
+				t = InteriorLayout.Tile.WALL_WINDOW if windows and x % 4 == 2 else InteriorLayout.Tile.WALL
 			elif x == 0 or x == size.x - 1 or y == size.y - 1:
 				t = InteriorLayout.Tile.WALL
 			elif carpet.has_area() and carpet.has_point(cell):
-				t = InteriorLayout.Tile.CARPET
+				t = carpet_tile
 			ground.set_cell(cell, 0, Vector2i(t, 0))
 
 

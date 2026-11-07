@@ -65,7 +65,7 @@
       "id": "sena_mila",
       "name": "Seña Mila",
       "role": "lleva velas al cementerio",
-      "spot": [8, 11],
+      "spot": [4, 11],
       "look": {"body": [40, 40, 50], "hair": [90, 90, 90]},
       "lines": {
         "1": ["Le llevo velas a mi difunto, como cada año. Esta noche el camino se me hace largo.", "Cuídese del perro negro, joven. Ese no hace daño, pero asusta.", "El vigilante de la caseta no estaba cuando pasé. Raro, ¿verdad?"],
