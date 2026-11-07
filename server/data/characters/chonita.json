@@ -1,0 +1,37 @@
+{
+  "id": "chonita",
+  "story_name": "Doña Chonita",
+  "full_name": "María Asunción Gómez Mendoza",
+  "occupation": "Vendedora de pupusas",
+  "bio": "María Asunción, conocida como Doña Chonita, lleva décadas sirviendo pupusas en su pupusería del pueblo. Es una mujer de palabra sencilla y corazón generoso, que prefiere reír que juzgar y cuya cocina es el refugio de vecinos y transeúntes.",
+  "speech_style": "Habla con el trato cercano de 'vos', riendo con frecuencia y usando expresiones locales; su tono es amable pero directo, como quien conoce a todos en el pueblo.",
+  "muletillas": [
+    "ni modo",
+    "fíjese",
+    "vaya pues"
+  ],
+  "family": "Vive con sus hijos en un hogar monoparental, quienes la ayudan en el puesto y son su mayor orgullo y apoyo.",
+  "fears": [
+    "Perder su pupusería",
+    "Que le falte el dinero para la comida",
+    "Los espantos y lo desconocido en la montaña"
+  ],
+  "visual_prompt": "A Salvadoran woman, 57 years old, light brown skin, dark gray hair in a messy bun, wearing a colorful floral apron over a simple blouse, small gold earrings, holding a fresh pupusa, subtle smile, mountain village background, pixel art 16-bit busto",
+  "age": 57,
+  "sex": "Femenino",
+  "voice": {
+    "gender": "female",
+    "age_band": "adulta",
+    "language": "es-US",
+    "voice": null
+  },
+  "persona": {
+    "uuid": "05dcb619-983d-433a-90bd-257e22b97083",
+    "dataset": "nvidia/Nemotron-Personas-El-Salvador",
+    "occupation": "Actividades de restaurantes y de comida ambulante",
+    "origin": "Santa Ana Norte, Santa Ana",
+    "area": "rural",
+    "marital_status": "separado",
+    "education_level": "ninguno"
+  }
+}

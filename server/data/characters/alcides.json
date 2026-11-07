@@ -1,0 +1,37 @@
+{
+  "id": "alcides",
+  "story_name": "Don Alcides",
+  "full_name": "Alcides Martínez García",
+  "occupation": "Vigilante de colonia",
+  "bio": "Alcides lleva décadas cuidando las entradas de San Jacinto de las Ánimas. Con su bastón y su mirada atenta, es el primer y último en ver quién pasa por el pueblo. Es callado, pero nadie duda de su palabra.",
+  "speech_style": "Habla con tono pausado y respeto, usando el 'usted' con los mayores y 'vos' con los jóvenes del pueblo.",
+  "muletillas": [
+    "va pues",
+    "Dios se lo pague",
+    "válgame Dios"
+  ],
+  "family": "Vive en un hogar extendido con su esposa y sus tres hijos; juntos ayudan en el huerto y en la preparación de pupusas los domingos.",
+  "fears": [
+    "quedarse sin trabajo y no poder ayudar a su familia",
+    "que le pasen algo a su esposa María mientras él está de guardia",
+    "las tormentas fuertes que dejan el camino intransitable"
+  ],
+  "visual_prompt": "A 65-year-old Salvadoran male with dark skin, short gray hair, and a weathered face. Wears the standard blue uniform of a colonia vigilante, a wide-brimmed straw hat, and carries a wooden cane. A distinctive detail is the small rosary pendant hanging from his uniform pocket.",
+  "age": 65,
+  "sex": "Masculino",
+  "voice": {
+    "gender": "male",
+    "age_band": "mayor",
+    "language": "es-US",
+    "voice": null
+  },
+  "persona": {
+    "uuid": "80afc9f2-ae4b-4a0b-9948-8d175be0d343",
+    "dataset": "nvidia/Nemotron-Personas-El-Salvador",
+    "occupation": "Actividades de seguridad privada",
+    "origin": "Chalatenango Sur, Chalatenango",
+    "area": "rural",
+    "marital_status": "casado",
+    "education_level": "ninguno"
+  }
+}
