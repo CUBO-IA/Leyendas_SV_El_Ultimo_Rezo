@@ -47,6 +47,10 @@ func _test_content() -> void:
 	check(ContentDB.game_object("tablero_electrico")["location_id"] == "puesto_policial", "objeto sabe su lugar")
 	check(GameState.format_clock("23:47") == "11:47 p. m.", "reloj 23:47 -> 11:47 p. m.")
 	check(GameState.format_clock("00:13") == "12:13 a. m.", "reloj 00:13 -> 12:13 a. m.")
+	if FileAccess.file_exists(Paths.content("generated/characters_public.json")):
+		var prof: Dictionary = ContentDB.profile("chonita")
+		check(prof.has("full_name") and prof.has("bio"), "lee el perfil público de B2 (%s)" % prof.get("full_name", "?"))
+		check(ContentDB.role_line("chonita").ends_with("años"), "rol con edad: " + ContentDB.role_line("chonita"))
 
 
 func _test_portraits() -> void:

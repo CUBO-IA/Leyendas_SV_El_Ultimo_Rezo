@@ -86,7 +86,8 @@ func open(id: String) -> void:
 	witness_id = id
 	var w: Dictionary = ContentDB.witness(id)
 	_name.text = str(w.get("name", id))
-	_role.text = str(w.get("role", ""))
+	_role.text = ContentDB.role_line(id)
+	_role.tooltip_text = ContentDB.bio(id)
 	_log.clear()
 	_log.visible_characters = -1
 	_picker.visible = false

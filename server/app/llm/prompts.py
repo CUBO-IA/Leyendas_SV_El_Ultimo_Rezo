@@ -31,12 +31,20 @@ def witness_system_prompt(witness_id: str, level: str, trust: int, fear: int,
     pub = data.witness_public(witness_id)
     sec = data.witness_secret(witness_id)
     extra = ""
+    sheet = data.witness_sheet(witness_id)
+    who = ""
+    if sheet:
+        # Ficha de B2: la persona del dataset le da voz propia. No trae nada del caso.
+        who = (f"\nQuién eres: {sheet['full_name']}, {sheet['age']} años, {sheet['occupation'].lower()}. "
+               f"{sheet['bio']} {sheet['family']}\n"
+               f"Cómo hablas: {sheet['speech_style']} Muletillas que usas a veces: "
+               f"{', '.join(sheet['muletillas'])}. Te da miedo: {', '.join(sheet['fears'])}.\n")
     if summary:
         extra += f"\nLo que ya pasó en esta conversación: {summary}\n"
     if situation:
         extra += f"\nLo que acaba de pasar: {situation}\n"
     return f"""Eres {pub['name']}, {pub['role'].lower()} en San Jacinto de las Ánimas, un pueblo de El Salvador. Es la noche del 1 de noviembre, víspera del Día de los Difuntos, y un investigador forastero te está haciendo preguntas. Nueve personas del pueblo desaparecieron cuando se fue la luz a las 11:47 p. m.
-
+{who}
 Cómo te comportas ahora:
 {sec['guide'][level]}
 {extra}

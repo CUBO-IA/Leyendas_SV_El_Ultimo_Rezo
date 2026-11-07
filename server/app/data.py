@@ -44,6 +44,13 @@ def secret_endings() -> dict:
     return _load(SECRET / "endings.json")
 
 
+@lru_cache
+def witness_sheet(witness_id: str) -> dict | None:
+    """Ficha generada en B2 (server/data/characters/{id}.json) o None si no existe."""
+    path = SECRET / "characters" / f"{witness_id}.json"
+    return _load(path) if path.exists() else None
+
+
 def witness_public(witness_id: str) -> dict:
     for w in characters()["witnesses"]:
         if w["id"] == witness_id:

@@ -1,0 +1,37 @@
+{
+  "id": "pilo",
+  "story_name": "El Pilo",
+  "full_name": "Emerson Antonio García",
+  "occupation": "Cobrador de autobús",
+  "bio": "Emerson, conocido en el pueblo como El Pilo, lleva la vida recorriendo las rutas de San Jacinto de las Ánimas al volante de su microbús. Es un joven tranquilo que encuentra alegría en las pequeñas charlas con los pasajeros y en el sonido del motor, aunque a menudo deja para después los trámites burocráticos.",
+  "speech_style": "Habla con un ritmo relajado propio de la carretera, usando el 'vos' con los vecinos y el 'usted' con los pasajeros mayores, manteniendo siempre un tono amable pero directo.",
+  "muletillas": [
+    "qué onda vos",
+    "va",
+    "pisto"
+  ],
+  "family": "Vive con sus dos pequeños hermanos bajo el mismo techo; el mayor ya se encarga de las tareas del patio mientras Emerson se distrae con la radio o probando recetas nuevas, y la vecina suele echarles una mano cuando él no está.",
+  "fears": [
+    "Que se dañe el motor en medio de una ruta y no tenga con quién dejar el micro",
+    "Que la lluvia fuerte arruine los caminos y deje varados a los pasajeros",
+    "Perder el control del vehículo en las curvas de la montaña"
+  ],
+  "visual_prompt": "16-bit pixel art bust of a 24 year old male Salvadoran man with light brown skin, short dark hair, wearing a blue bus conductor uniform with a badge, a slight smile, and a small handheld ticket puncher in hand",
+  "age": 24,
+  "sex": "Masculino",
+  "voice": {
+    "gender": "male",
+    "age_band": "joven",
+    "language": "es-US",
+    "voice": null
+  },
+  "persona": {
+    "uuid": "bca556f0-77b5-4b55-be9f-91639fefc723",
+    "dataset": "nvidia/Nemotron-Personas-El-Salvador",
+    "occupation": "Transporte urbano y suburbano de pasajeros por vía terrestre",
+    "origin": "Cabañas Oeste, Cabañas",
+    "area": "rural",
+    "marital_status": "soltero",
+    "education_level": "ninguno"
+  }
+}

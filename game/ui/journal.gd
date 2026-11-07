@@ -118,9 +118,13 @@ func _show_witness(i: int) -> void:
 	var n: Dictionary = GameState.npc(id)
 	var w: Dictionary = ContentDB.witness(id)
 	_wit_portrait.texture = Portraits.get_texture(id, "neutral")
-	var head: String = "[font_size=24][color=#e08a2c]%s[/color][/font_size] · %s\nTestimonio: [b]%s[/b] · Confianza %d/10 · Miedo %d/10\n" % [
-		_esc(str(w.get("name", id))), _esc(str(w.get("role", ""))), GameState.level_name(str(n.get("level", "inicial"))),
-		int(n.get("trust", 0)), int(n.get("fear", 0))]
+	var prof: Dictionary = ContentDB.profile(id)
+	var head: String = "[font_size=24][color=#e08a2c]%s[/color][/font_size] · %s\n" % [
+		_esc(str(w.get("name", id))), _esc(ContentDB.role_line(id))]
+	if prof.has("bio"):
+		head += "[color=#9a90a8]%s. %s[/color]\n" % [_esc(str(prof.get("full_name", ""))), _esc(str(prof["bio"]))]
+	head += "Testimonio: [b]%s[/b] · Confianza %d/10 · Miedo %d/10\n" % [
+		GameState.level_name(str(n.get("level", "inicial"))), int(n.get("trust", 0)), int(n.get("fear", 0))]
 	var lines: PackedStringArray = []
 	for line: Dictionary in GameState.transcript(id):
 		match str(line["who"]):

@@ -1,0 +1,37 @@
+{
+  "id": "padre_mauricio",
+  "story_name": "Padre Mauricio",
+  "full_name": "Mauricio Hernández Méndez",
+  "occupation": "Cura párroco",
+  "bio": "El padre Mauricio es el párroco de San Jacinto de las Ánimas, un hombre de 57 años cuya presencia brinda consuelo a la comunidad. Con una voz tranquila y pausada, guía a los feligreses con paciencia, aunque guarda un misterio silencioso sobre los oscuros sucesos que azotan al pueblo.",
+  "speech_style": "Habla con un ritmo pausado y solemne, usando el tratamiento de 'usted' con los feligreses y 'vos' entre compañeros de curia, manteniendo siempre un tono sereno y reflexivo.",
+  "muletillas": [
+    "mire",
+    "chivo",
+    "a la gran"
+  ],
+  "family": "Vive en una casa anexa al templo con su madre viuda, su hermano menor y sus dos sobrinos, a quienes considera sus propios hijos y a los que intenta dejar alejados de los rumores del pueblo.",
+  "fears": [
+    "Que la lluvia constante inunde la capilla y dañe los vitrales",
+    "Que los jóvenes del pueblo pierdan la fe ante la falta de respuestas",
+    "Que algo malo suceda a su rebaño en las noches tormentosas"
+  ],
+  "visual_prompt": "PORTRAIT OF A 57-YEAR-OLD SALVADOREAN PRIEST, busted portrait, 16-bit pixel art. Age: mature. Skin: light brown. Hair: graying, short, neat. Face: kind eyes, slight stubble. Clothing: traditional black cassock with a white collar, worn over a simple white shirt. Distinctive detail: a simple wooden crucifix hanging from his neck.",
+  "age": 57,
+  "sex": "Masculino",
+  "voice": {
+    "gender": "male",
+    "age_band": "adulta",
+    "language": "es-US",
+    "voice": null
+  },
+  "persona": {
+    "uuid": "39489295-a0b0-40cc-9952-f7e033747fd7",
+    "dataset": "nvidia/Nemotron-Personas-El-Salvador",
+    "occupation": "Actividades de organizaciones religiosas",
+    "origin": "Chalatenango Centro, Chalatenango",
+    "area": "rural",
+    "marital_status": "soltero",
+    "education_level": "primaria"
+  }
+}

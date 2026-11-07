@@ -22,14 +22,17 @@ func reload() -> void:
 	world = _load_dict(Paths.content("public/world.json"))
 	characters = _load_dict(Paths.content("public/characters.json"))
 	evidence = _load_dict(Paths.content("public/evidence.json"))
+	# Fichas públicas de B2: {"source", "license", "witnesses": [{id, full_name, age, occupation, bio}]}
 	var gen: Variant = Paths.read_json(Paths.content("generated/characters_public.json"))
 	generated = {}
-	if gen is Dictionary:
-		generated = gen
+	var items: Array = []
+	if gen is Dictionary and (gen as Dictionary).get("witnesses") is Array:
+		items = (gen as Dictionary)["witnesses"]
 	elif gen is Array:
-		for item: Variant in gen:
-			if item is Dictionary and (item as Dictionary).has("id"):
-				generated[(item as Dictionary)["id"]] = item
+		items = gen
+	for item: Variant in items:
+		if item is Dictionary and (item as Dictionary).has("id"):
+			generated[(item as Dictionary)["id"]] = item
 
 	_witnesses = _index(characters.get("witnesses", []))
 	_suspects = _index(characters.get("suspects", []))
@@ -88,6 +91,18 @@ func display_name(id: String) -> String:
 		if table.has(id):
 			return str((table[id] as Dictionary).get("name", id))
 	return id
+
+
+## Perfil público de B2 ({full_name, age, occupation, bio}) o {} si no hay.
+func profile(id: String) -> Dictionary:
+	return generated.get(id, {})
+
+
+## "Vendedora de pupusas · 57 años" (la edad solo si hay ficha de B2).
+func role_line(id: String) -> String:
+	var role: String = str(witness(id).get("role", ""))
+	var p: Dictionary = profile(id)
+	return role + (" · %d años" % int(p["age"]) if p.has("age") else "")
 
 
 ## Biografía corta: la generada en B2 si existe; si no, el rol.
