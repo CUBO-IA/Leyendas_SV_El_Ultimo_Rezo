@@ -43,6 +43,8 @@ func handle(kind: String, body: Dictionary) -> Dictionary:
 			return _ok(state.duplicate(true))
 		"stt":
 			return _ok(fixture("stt_response__ejemplo"))
+		"lobby":  # experimental: en el mock no hay partidas en red
+			return _ok({"games": []})
 	if state.is_empty():
 		return _err("session_not_found", "No existe la sesión %s." % body.get("session_id", ""))
 	if bool(state.get("ended", false)):

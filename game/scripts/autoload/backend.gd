@@ -54,6 +54,17 @@ func new_session(player_name: String = "Investigador", demo: bool = false) -> Di
 	return await _call("session", HTTPClient.METHOD_POST, "/session", body)
 
 
+## Experimental: entra a la partida de otro jugador (la lee y se vuelve la tuya).
+func join_session(session_id: String) -> Dictionary:
+	GameState.reset()
+	return await _call("get_session", HTTPClient.METHOD_GET, "/session/%s" % session_id.uri_encode(), null)
+
+
+## Experimental: partidas con jugadores conectados ({"games": [{session_id, host, players, act, clock}]}).
+func lobby() -> Dictionary:
+	return await _call("lobby", HTTPClient.METHOD_GET, "/lobby", null)
+
+
 func get_session() -> Dictionary:
 	return await _call("get_session", HTTPClient.METHOD_GET,
 		"/session/%s" % GameState.session_id().uri_encode(), null)

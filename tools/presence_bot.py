@@ -1,7 +1,8 @@
 """Jugador de prueba para la presencia compartida (rama experimental).
 
-Se conecta al motor como otro jugador y camina en círculo en el pueblo, cerca de donde
-empieza la partida, para probar sin una segunda computadora:
+Se une a una partida abierta (la primera del lobby, o --session ID) como otro jugador y
+camina en círculo en el pueblo, cerca de donde empieza la partida, para probar sin una
+segunda computadora. Empieza tú una partida (Nueva partida) y luego corre:
 
     .venv\\Scripts\\python tools\\presence_bot.py [--api http://127.0.0.1:8000] [--name "Fae (bot)"] [--seconds 60]
 """
@@ -11,6 +12,8 @@ import argparse
 import asyncio
 import json
 import math
+
+import urllib.request
 
 import websockets
 
@@ -30,10 +33,19 @@ async def main() -> None:
     ap.add_argument("--name", default="Fae (bot)")
     ap.add_argument("--seconds", type=float, default=60.0)
     ap.add_argument("--radius", type=float, default=36.0)
+    ap.add_argument("--session", default="", help="id de la partida (por defecto, la primera del lobby)")
     args = ap.parse_args()
+    sid = args.session
+    if not sid:
+        with urllib.request.urlopen(args.api.rstrip("/") + "/lobby", timeout=10) as r:
+            games = json.loads(r.read())["games"]
+        if not games:
+            raise SystemExit("No hay partidas abiertas: empieza una en el juego (Nueva partida) y vuelve a intentar.")
+        sid = games[0]["session_id"]
+        print(f"me uno a la partida de {games[0]['host']} ({sid})")
     url = args.api.replace("https://", "wss://").replace("http://", "ws://").rstrip("/") + "/ws/presence"
     async with websockets.connect(url) as ws:
-        await ws.send(json.dumps({"t": "hello", "name": args.name}))
+        await ws.send(json.dumps({"t": "hello", "name": args.name, "s": sid}))
         print("conectado:", json.loads(await ws.recv()), "·", json.loads(await ws.recv()))
 
         async def listen() -> None:
@@ -49,7 +61,7 @@ async def main() -> None:
             a = t * 0.9
             x = START[0] + 40 + args.radius * math.cos(a)
             y = START[1] - 10 + args.radius * 0.6 * math.sin(a)
-            await ws.send(json.dumps({"t": "pos", "scene": "town", "x": round(x, 1), "y": round(y, 1),
+            await ws.send(json.dumps({"t": "pos", "s": sid, "scene": "town", "x": round(x, 1), "y": round(y, 1),
                                       "f": facing(x - last[0], y - last[1]), "m": True}))
             last = (x, y)
             await asyncio.sleep(0.1)

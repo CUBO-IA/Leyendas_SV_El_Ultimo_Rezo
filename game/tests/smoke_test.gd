@@ -727,37 +727,59 @@ func _test_cementerio() -> void:
 	await _frames(2)
 
 
-## Experimental: otros jugadores en el mapa (Presence), simulando los mensajes del motor.
+## Experimental: partidas compartidas (Presence), simulando los mensajes del motor.
 func _test_presence() -> void:
-	print("  -- presencia (experimental)")
+	print("  -- partidas compartidas (experimental)")
 	check(Presence.ws_url("http://100.79.57.108:8000") == "ws://100.79.57.108:8000/ws/presence"
 		and Presence.ws_url("https://x.ts.net/") == "wss://x.ts.net/ws/presence", "URL del canal de presencia")
+	var title_script: GDScript = load("res://scripts/scenes/title.gd")
+	check(title_script.url_for("100.79.57.108") == "http://100.79.57.108:8000"
+		and title_script.url_for("http://10.0.0.5:9000") == "http://10.0.0.5:9000"
+		and title_script.host_of("http://100.79.57.108:8000") == "100.79.57.108", "IP <-> URL del motor al unirse")
+	check(title_script.game_label({"host": "Fer", "act": 2, "clock": "00:13", "players": ["Fer", "Fae"]})
+		== "Partida de Fer · Acto II · 12:13 a. m. · 2 jugadores", "texto de cada partida en el lobby")
 	await Backend.new_session("Presencia")
+	var sid: String = GameState.session_id()
 	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
 	add_child(town)
 	await _frames(3)
 	check(not Presence.is_online(), "en modo demo no se conecta")
 	Presence.handle_message(JSON.stringify({"t": "welcome", "id": "yo"}))
 	Presence.handle_message(JSON.stringify({"t": "state", "players": [
-		{"id": "p2", "name": "Fae", "scene": "town", "x": 500, "y": 380, "f": "left", "m": false}]}))
+		{"id": "p2", "name": "Fae", "s": sid, "scene": "town", "x": 500, "y": 380, "f": "left", "m": false}]}))
 	await _frames(2)
 	var remotes: Dictionary = town.get("remotes")
-	check(remotes.has("p2") and (remotes["p2"] as RemotePlayer).peer_name == "Fae", "aparece Fae en el pueblo")
-	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "town", "x": 520, "y": 380, "f": "right", "m": true}))
+	check(remotes.has("p2") and (remotes["p2"] as RemotePlayer).peer_name == "Fae", "aparece Fae (de mi partida) en el pueblo")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p3", "name": "Ajeno", "s": "otra", "scene": "town", "x": 510, "y": 380}))
+	await _frames(1)
+	check(not remotes.has("p3"), "alguien de otra partida no aparece")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "s": sid, "scene": "town", "x": 520, "y": 380, "f": "right", "m": true}))
 	await _frames(30)
 	var fae: RemotePlayer = remotes["p2"]
 	check(fae.position.distance_to(Vector2(520, 380)) < 3.0 and fae.facing == "right", "Fae camina hasta donde dice el motor")
-	Presence.handle_message(JSON.stringify({"t": "pos", "id": "yo", "name": "Yo", "scene": "town", "x": 1, "y": 1}))
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "yo", "name": "Yo", "s": sid, "scene": "town", "x": 1, "y": 1}))
 	check(not remotes.has("yo"), "no me dibujo a mí mismo")
-	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "iglesia", "x": 100, "y": 100}))
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "s": sid, "scene": "iglesia", "x": 100, "y": 100}))
 	await _frames(2)
 	check(not remotes.has("p2"), "si entra a la iglesia, desaparece del pueblo")
-	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "scene": "town", "x": 500, "y": 380}))
+	# La partida cambió en el motor (otro jugador examinó): se vuelve a leer.
+	(Backend.get("_mock") as MockBackend).state["evidence"].append("registro_electrico")
+	Presence.handle_message(JSON.stringify({"t": "world", "s": sid}))
+	for i: int in 30:
+		if GameState.has_evidence("registro_electrico"):
+			break
+		await _frames(1)
+	check(GameState.has_evidence("registro_electrico"), "lo que encuentra un compañero aparece en mi partida")
+	Presence.handle_message(JSON.stringify({"t": "pos", "id": "p2", "name": "Fae", "s": sid, "scene": "town", "x": 500, "y": 380}))
 	Presence.handle_message(JSON.stringify({"t": "leave", "id": "p2"}))
 	await _frames(2)
 	check(not remotes.has("p2") and Presence.others.is_empty(), "si se desconecta, se va del mapa")
 	Presence.handle_message("esto no es json")
 	check(Presence.others.is_empty(), "mensajes malos se ignoran")
+	# Un compañero acusó: el final llega para todos.
+	var ending: Dictionary = {"ending_id": "gris", "title": "El pacto del silencio", "scene": "ending_gris", "text": "..."}
+	Presence.handle_message(JSON.stringify({"t": "ended", "s": sid, "ending": ending}))
+	check(bool(GameState.world.get("ended", false)) and GameState.last_ending.get("ending_id") == "gris", "el final de un compañero llega a mi partida")
 	Presence.my_id = ""
 	town.queue_free()
 	await _frames(2)

@@ -49,6 +49,7 @@ var fog_overlay: FogOverlay
 var act_card: ActCard
 var remotes: Dictionary = {}  ## experimental: otros jugadores (Presence) en esta escena
 var _seen_peers: Dictionary = {}
+var _known_evidence: Array[String] = []
 var _whisper_wait: float = 20.0
 var _whisper_i: int = 0
 var _calm_hint_shown: bool = false
@@ -96,6 +97,8 @@ func _ready() -> void:
 	_on_fear(Night.fear)
 	Presence.peer_updated.connect(_on_peer)
 	Presence.peer_left.connect(_on_peer_left)
+	Presence.ended_by_peer.connect(_on_ended_by_peer)
+	_known_evidence = GameState.evidence_ids()
 	for id: String in Presence.others:
 		_seen_peers[id] = true
 		_on_peer(id, Presence.others[id])
@@ -170,6 +173,14 @@ func _on_peer(id: String, data: Dictionary) -> void:
 	elif r != null:
 		r.queue_free()
 		remotes.erase(id)
+
+
+## Otro jugador de la partida acusó: el final es para todos.
+func _on_ended_by_peer(_ending: Dictionary) -> void:
+	hud.toast("Un compañero hizo la acusación…", UiKit.ACCENT)
+	await get_tree().create_timer(1.5).timeout
+	if is_inside_tree():
+		SceneRouter.go(SceneRouter.ENDING)
 
 
 func _on_peer_left(id: String) -> void:
@@ -367,6 +378,14 @@ func add_night(color: Color) -> void:
 
 func _on_world_changed(_state: Dictionary) -> void:
 	hud.refresh()
+	# Partida compartida: lo que encuentra otro jugador también se avisa aquí
+	# (si la encontré yo, ya la avisó examine_object o el interrogatorio).
+	var now_ev: Array[String] = GameState.evidence_ids()
+	if not _busy:
+		for ev: String in now_ev:
+			if ev not in _known_evidence:
+				hud.toast("Nueva evidencia en la partida: %s" % ContentDB.display_name(ev), UiKit.VIOLET.lightened(0.4))
+	_known_evidence = now_ev
 	var unlocked: Array = GameState.world.get("unlocked_locations", [])
 	var act: int = GameState.act()
 	for id: String in objects:
