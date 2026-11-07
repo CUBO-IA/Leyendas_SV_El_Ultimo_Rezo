@@ -4,7 +4,7 @@ Juego de investigación sobrenatural ambientado en **San Jacinto de las Ánimas,
 
 El jugador explora el pueblo, interroga a testigos controlados por IA (con voz), les presenta evidencias para descubrir sus mentiras y acusa a **1 de 6 entidades** antes de la última campanada. Hay **3 finales**: malo, gris y verdadero.
 
-> Historia completa: [`docs/historia.md`](docs/historia.md) · Prompts de fases: [`docs/prompts_claude_code.md`](docs/prompts_claude_code.md)
+> Para no arruinar el misterio, la solución del caso (`server/data/`) y la historia completa (`docs/`) no están publicadas todavía; se subirán después del hackathon. Sin ellas el motor no arranca, pero el cliente funciona en modo `mock`.
 
 ## Características
 
@@ -41,7 +41,7 @@ Endpoints: `GET /health`, `POST /session`, `GET /session/{id}`, `POST /talk`, `P
 ├── assets_generated/      # Retratos 512x512 (portraits/) y arte del equipo (personajes/, fachadas/)
 ├── tests/                 # Pruebas de contrato y del motor
 ├── tools/                 # Scripts: smoke tests, placeholders, SFX, build
-├── docs/                  # Historia y prompts de fases
+├── docs/                  # Historia y prompts de fases (local, se publica después)
 └── CLAUDE.md              # Guía de trabajo para contribuidores
 ```
 

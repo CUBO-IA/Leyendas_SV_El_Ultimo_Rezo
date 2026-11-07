@@ -27,3 +27,8 @@ server/cache/
 
 # Reportes de las pruebas de humo
 tools/out/
+
+# Spoilers: la solución del caso y la historia completa se quedan locales
+# hasta después del hackathon (el motor las lee del disco).
+server/data/
+docs/
