@@ -7,7 +7,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +16,7 @@ from .config import Settings
 from .dialogue import SITUATIONS, Dialogue, clean_player_text, evidence_message
 from .errors import ApiError
 from .llm.provider import Provider, get_provider
+from .presence import PresenceHub
 from .store import SessionStore
 from .voice import Voice, VoiceError
 
@@ -110,6 +111,26 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
 
     app = FastAPI(title="Leyendas SV — motor", version="0.1.0", lifespan=lifespan)
     errors.install(app)
+    presence = PresenceHub()  # experimental: partidas compartidas, los jugadores se ven en el mapa
+
+    @app.websocket("/ws/presence")
+    async def ws_presence(ws: WebSocket):
+        await presence.handle(ws)
+
+    @app.get("/lobby")
+    async def lobby(request: Request):
+        """Partidas con jugadores conectados, para "Unirse a una partida"."""
+        games = []
+        for g in presence.lobby():
+            try:
+                public = _load(request, g["session_id"])[0]
+            except ApiError:
+                continue
+            if public.get("ended"):
+                continue
+            games.append({**g, "act": public["act"], "clock": public["clock"],
+                          "evidence": len(public["evidence"])})
+        return {"games": games}
 
     @app.get("/health")
     async def health(request: Request):
@@ -157,13 +178,15 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
                 said, source = await st.dialogue.react(
                     npc, private, SITUATIONS["trust_confess"], text, "trust_confess")
             st.store.save(body.session_id, public, private)
-            return {
+            result = {
                 "reply": said["reply"], "emotion": said["emotion"], "level": npc["level"],
                 "trust": npc["trust"], "fear": npc["fear"],
                 "new_evidence": outcome.new_evidence, "new_deductions": outcome.new_deductions,
                 "audio_url": _audio(request, body.want_audio, npc["id"], said),
                 "source": source, "state": public,
             }
+            await presence.notify_world(body.session_id)  # los demás de la partida se actualizan
+            return result
 
     @app.post("/present")
     async def present(request: Request, body: PresentRequest):
@@ -180,7 +203,7 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
                 npc, private, SITUATIONS[outcome.kind], evidence_message(body.evidence_id),
                 f"present:{body.evidence_id}:{outcome.kind}")
             st.store.save(body.session_id, public, private)
-            return {
+            result = {
                 "reply": said["reply"], "emotion": said["emotion"],
                 "contradiction": outcome.changed_level, "level": npc["level"],
                 "new_deductions": outcome.new_deductions, "new_evidence": outcome.new_evidence,
@@ -188,6 +211,8 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
                 "audio_url": _audio(request, body.want_audio, npc["id"], said),
                 "source": source, "state": public,
             }
+            await presence.notify_world(body.session_id)
+            return result
 
     @app.post("/examine")
     async def examine(request: Request, body: ExamineRequest):
@@ -200,6 +225,7 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             if body.object_id not in examined:
                 examined.append(body.object_id)
             st.store.save(body.session_id, public, private)
+            await presence.notify_world(body.session_id)
             return {"text": text, "new_evidence": new, "state": public}
 
     @app.post("/accuse")
@@ -213,6 +239,7 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             ending = rules.accuse(public, body.suspect_id, body.evidence_ids, body.decision)
             private["ending"] = ending["ending_id"]
             st.store.save(body.session_id, public, private)
+            await presence.notify_ended(body.session_id, ending)  # el final, para todos
             return ending
 
     @app.get("/audio/{audio_file}")
