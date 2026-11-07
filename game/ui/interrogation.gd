@@ -62,6 +62,10 @@ var _type_tween: Tween
 var _voice_accum: float = 0.0
 var _picker_ids: Array[String] = []
 var _wait_timer: Timer
+var _mic_btn: Button
+var _voiced: bool = false  ## la última respuesta trae voz real
+var _listening: bool = false
+var _transcribing: bool = false
 
 
 func _ready() -> void:
@@ -93,6 +97,7 @@ func open(id: String) -> void:
 	_picker.visible = false
 	_banner.visible = false
 	_set_emotion("neutral")
+	_voiced = false
 	_refresh_gauges()
 	var history: Array = GameState.transcript(id)
 	if history.is_empty():
@@ -110,6 +115,10 @@ func open(id: String) -> void:
 func close() -> void:
 	if not _root.visible:
 		return
+	if is_listening():
+		Sound.stop_recording()
+	_listening = false
+	Sound.stop_voice()
 	_root.visible = false
 	_question.release_focus()
 	closed.emit()
@@ -126,6 +135,14 @@ func _input(event: InputEvent) -> void:
 	if key and key.pressed and not key.echo and key.ctrl_pressed and (key.physical_keycode == KEY_E or key.keycode == KEY_E):
 		get_viewport().set_input_as_handled()
 		open_picker()
+		return
+	# Mantener Tab = hablar (V escribiría en la caja de texto, que siempre tiene el foco).
+	if key and not key.echo and (key.physical_keycode == KEY_TAB or key.keycode == KEY_TAB) and not _picker.visible:
+		get_viewport().set_input_as_handled()
+		if key.pressed:
+			start_listening()
+		else:
+			stop_listening()
 		return
 	if not _input_event_cancel(event):
 		return
@@ -147,7 +164,7 @@ func ask(text: String) -> void:
 		return
 	_question.text = ""
 	_add_line("player", text)
-	var r: Dictionary = await _request(func() -> Dictionary: return await Backend.talk(witness_id, text))
+	var r: Dictionary = await _request(func() -> Dictionary: return await Backend.talk(witness_id, text, Sound.voice_enabled))
 	_handle_response(r, false)
 
 
@@ -156,7 +173,7 @@ func present(evidence_id: String) -> void:
 		return
 	_picker.visible = false
 	_add_line("player", "[Muestra: %s]" % ContentDB.display_name(evidence_id))
-	var r: Dictionary = await _request(func() -> Dictionary: return await Backend.present(witness_id, evidence_id))
+	var r: Dictionary = await _request(func() -> Dictionary: return await Backend.present(witness_id, evidence_id, Sound.voice_enabled))
 	_handle_response(r, true)
 
 
@@ -190,7 +207,10 @@ func _handle_response(r: Dictionary, presenting: bool) -> void:
 		return
 	var d: Dictionary = r["data"]
 	_set_emotion(str(d.get("emotion", "neutral")))
+	_voiced = d.get("audio_url") != null and Sound.voice_enabled
 	_add_line("npc", str(d.get("reply", "...")), true)
+	if _voiced:
+		Sound.play_voice(d["audio_url"])
 	_refresh_gauges()
 	var deductions: Array = d.get("new_deductions", [])
 	var evidence: Array = d.get("new_evidence", [])
@@ -279,6 +299,60 @@ func log_text() -> String:
 	return _log.get_parsed_text()
 
 
+# ---------- hablar con el micrófono ----------
+
+func is_listening() -> bool:
+	return _listening
+
+
+func start_listening() -> void:
+	if _listening or _busy or _transcribing or not _root.visible:
+		return
+	if not Sound.mic_available():
+		_add_line("system", "No hay micrófono disponible (revisa Opciones o los permisos de Windows). Escribe tu pregunta.")
+		return
+	Sound.stop_voice()
+	if Sound.start_recording():
+		_listening = true
+		_waiting.visible = true
+		_waiting.add_theme_color_override("font_color", UiKit.DANGER)
+
+
+func stop_listening() -> void:
+	if not _listening:
+		return
+	_listening = false
+	_waiting.add_theme_color_override("font_color", UiKit.MUTED)
+	var wav: PackedByteArray = Sound.stop_recording()
+	if wav.size() < 8000:  # menos de ~0.1 s
+		_waiting.visible = _busy
+		_add_line("system", "No se escuchó nada. Mantén Tab mientras hablas.")
+		return
+	await transcribe(wav)
+
+
+## Envía el WAV a /stt y deja el texto en la caja para que el jugador lo revise.
+func transcribe(wav: PackedByteArray) -> void:
+	_transcribing = true
+	_waiting.visible = true
+	_question.editable = false
+	var r: Dictionary = await Backend.stt(wav)
+	_transcribing = false
+	_question.editable = not _busy
+	_waiting.visible = _busy
+	if not _root.visible:
+		return
+	var text: String = str(r["data"].get("text", "")).strip_edges() if r["ok"] else ""
+	if text == "":
+		var detail: String = str(r["error"].get("detail", "")) if not r["ok"] else "No se entendió."
+		_add_line("system", "No pude transcribir tu voz: %s Escribe tu pregunta." % detail)
+		_question.grab_focus()
+		return
+	_question.text = text
+	_question.grab_focus()
+	_question.caret_column = text.length()
+
+
 func _set_busy(b: bool) -> void:
 	_busy = b
 	_question.editable = not b
@@ -324,8 +398,17 @@ func is_typing() -> bool:
 func _process(delta: float) -> void:
 	if not _root.visible:
 		return
-	_waiting.text = "%s está pensando%s" % [_name.text, ".".repeat(1 + floori(Time.get_ticks_msec() / 350.0) % 3)]
-	if is_typing():
+	var dots: String = ".".repeat(1 + floori(Time.get_ticks_msec() / 350.0) % 3)
+	if _listening:
+		_waiting.text = "Escuchando%s suelta Tab para terminar (%d s)" % [dots, ceili(Sound.record_time_left())]
+		if Sound.record_time_left() <= 0.05:
+			stop_listening()  # tope de grabación
+	elif _transcribing:
+		_waiting.text = "Transcribiendo tu pregunta%s" % dots
+	else:
+		_waiting.text = "%s está pensando%s" % [_name.text, dots]
+	# El parpadeo de "voz" solo si el testigo no habla con voz real.
+	if is_typing() and not _voiced:
 		_voice_accum += delta
 		if _voice_accum > 0.07:
 			_voice_accum = 0.0
@@ -478,6 +561,10 @@ func _build() -> void:
 	right.add_child(actions)
 	_present_btn = UiKit.button("Presentar evidencia (Ctrl+E)", open_picker, 320)
 	actions.add_child(_present_btn)
+	_mic_btn = UiKit.button("Hablar (mantén Tab)", func() -> void: pass, 240)
+	_mic_btn.button_down.connect(start_listening)
+	_mic_btn.button_up.connect(stop_listening)
+	actions.add_child(_mic_btn)
 	var spacer: Control = Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_child(spacer)

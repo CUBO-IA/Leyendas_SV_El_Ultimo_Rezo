@@ -121,6 +121,7 @@ func set_base_url(url: String) -> void:
 
 func save_settings() -> void:
 	var cfg: ConfigFile = ConfigFile.new()
+	cfg.load(SETTINGS_PATH)  # conserva las otras secciones (audio)
 	cfg.set_value("backend", "mode", mode)
 	cfg.set_value("backend", "base_url", base_url)
 	var err: Error = cfg.save(SETTINGS_PATH)

@@ -27,6 +27,7 @@ var _busy: bool = false
 var _known_unlocked: Array = []
 var _zone: String = "-"
 var _accuse_announced: bool = false
+var _known_act: int = 1
 
 
 func _ready() -> void:
@@ -55,6 +56,11 @@ func _ready() -> void:
 	player.focus_changed.connect(_on_focus_changed)
 
 	_known_unlocked = (GameState.world.get("unlocked_locations", []) as Array).duplicate()
+	_known_act = GameState.act()
+	Sound.play_ambience(_ambience_kind())
+	if not GameState.bell_rung:
+		GameState.bell_rung = true  # la campanada de las 11:47 que abre el caso
+		Sound.bell(1)
 	_accuse_announced = GameState.can_accuse()
 	GameState.world_changed.connect(_on_world_changed)
 	_on_world_changed(GameState.world)
@@ -68,6 +74,11 @@ func _build_map() -> void:
 
 func _zone_at(_pos: Vector2) -> String:
 	return ""
+
+
+## Ambiente de la escena: "town" o "interior".
+func _ambience_kind() -> String:
+	return "town"
 
 
 func _process(_delta: float) -> void:
@@ -226,6 +237,9 @@ func _on_world_changed(_state: Dictionary) -> void:
 		if loc not in _known_unlocked:
 			hud.toast("Nuevo lugar: %s" % ContentDB.display_name(str(loc)), UiKit.VIOLET.lightened(0.3))
 	_known_unlocked = unlocked.duplicate()
+	if act > _known_act:
+		_known_act = act
+		Sound.bell(3)  # cambia el acto: el campanario vuelve a sonar
 	hud.set_accuse_ready(GameState.can_accuse())
 	if GameState.can_accuse() and not _accuse_announced:
 		_accuse_announced = true

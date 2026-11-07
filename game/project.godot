@@ -8,6 +8,10 @@ config/name="Leyendas SV: El Último Rezo de las Ánimas"
 run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.7")
 
+[audio]
+
+driver/enable_input=true
+
 [autoload]
 
 Controls="*res://scripts/autoload/controls.gd"
@@ -15,6 +19,7 @@ ContentDB="*res://scripts/autoload/content_db.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 Backend="*res://scripts/autoload/backend.gd"
 SceneRouter="*res://scripts/autoload/scene_router.gd"
+Sound="*res://scripts/autoload/sound.gd"
 
 [debug]
 

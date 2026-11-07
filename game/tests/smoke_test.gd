@@ -20,13 +20,13 @@ func _ready() -> void:
 		await _test_town()
 		await _test_interrogation()
 		await _test_a4()
+		await _test_sound()
 	else:
 		await _test_http()
 		await _test_full_game_http()
-	# Deja liberar nodos y que el hilo de audio suelte los sonidos detenidos antes de salir.
-	await get_tree().create_timer(0.5).timeout
+		await _test_voice_http()
 	print("== %d ok, %d fallos ==" % [_passes, _fails])
-	get_tree().quit(1 if _fails > 0 else 0)
+	Sound.quit_clean(1 if _fails > 0 else 0)
 
 
 func check(cond: bool, what: String) -> void:
@@ -473,6 +473,85 @@ func _test_full_game_http() -> void:
 	print("    Final: %s — %s" % [GameState.last_ending.get("title", "?"), GameState.last_ending.get("text", "")])
 	acc.queue_free()
 	await _frames(2)
+
+
+func _test_sound() -> void:
+	print("  -- sonido y micrófono (A5)")
+	for bus: String in Sound.BUSES:
+		check(AudioServer.get_bus_index(bus) >= 0, "bus de audio " + bus)
+	var mic: int = AudioServer.get_bus_index(Sound.MIC_BUS)
+	check(mic >= 0 and AudioServer.is_bus_mute(mic), "bus del micrófono silenciado")
+	var has_rec: bool = false
+	for i: int in AudioServer.get_bus_effect_count(mic):
+		has_rec = has_rec or AudioServer.get_bus_effect(mic, i) is AudioEffectRecord
+	check(has_rec, "grabador en el bus del micrófono")
+	var music: AudioStreamWAV = (Sound.get("_music") as AudioStreamPlayer).stream as AudioStreamWAV
+	check(music != null and music.loop_mode == AudioStreamWAV.LOOP_FORWARD, "música en bucle")
+	check(bool(ProjectSettings.get_setting("audio/driver/enable_input")), "entrada de audio habilitada")
+
+	# Ajustes: respalda el settings.cfg real del jugador y lo restaura al final.
+	var had: bool = FileAccess.file_exists(Sound.SETTINGS_PATH)
+	var backup: PackedByteArray = FileAccess.get_file_as_bytes(Sound.SETTINGS_PATH) if had else PackedByteArray()
+	var prev: Array = [Sound.voice_enabled, Sound.volumes.duplicate()]
+	Sound.voice_enabled = false
+	Sound.set_volume("Music", 0.2)
+	Sound.save_settings()
+	Backend.save_settings()  # no debe borrar la sección de audio
+	Sound.voice_enabled = true
+	Sound.set_volume("Music", 0.9)
+	Sound.load_settings()
+	check(not Sound.voice_enabled and is_equal_approx(float(Sound.volumes["Music"]), 0.2), "ajustes de sonido se guardan y cargan")
+	if had:
+		var f: FileAccess = FileAccess.open(Sound.SETTINGS_PATH, FileAccess.WRITE)
+		f.store_buffer(backup)
+		f.close()
+	else:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(Sound.SETTINGS_PATH))
+	Sound.voice_enabled = prev[0]
+	for b: String in Sound.BUSES:
+		Sound.set_volume(b, float(prev[1][b]))
+
+	Sound.play_voice(null)
+	check(not Sound.is_voice_playing(), "sin audio_url no hay voz")
+
+	# Interrogatorio: el texto transcrito queda en la caja para revisarlo.
+	await Backend.new_session("Microfono")
+	var it: Interrogation = Interrogation.new()
+	add_child(it)
+	it.open("chonita")
+	await _frames(2)
+	await it.transcribe(_test_wav())
+	var q: LineEdit = it.get("_question")
+	var expected: String = str(Paths.read_json(Paths.fixture("stt_response__ejemplo"))["text"])
+	check(q.text == expected and q.has_focus(), "la voz transcrita queda en la caja: «%s»" % q.text)
+	it.close()
+	it.queue_free()
+	await _frames(1)
+
+
+func _test_wav() -> PackedByteArray:
+	return FileAccess.get_file_as_bytes("res://tests/assets/pregunta_plaza.wav")
+
+
+## Contra el motor real: la voz de un testigo suena y el micrófono se transcribe.
+func _test_voice_http() -> void:
+	print("  -- voz contra el motor (B4 + A5)")
+	var h: Dictionary = (await Backend.health())["data"]
+	if not bool(h.get("tts", false)) or not bool(h.get("stt", false)):
+		print("    (el motor no tiene voz: tts=%s stt=%s)" % [h.get("tts"), h.get("stt")])
+		check(false, "el motor real tiene TTS y STT")
+		return
+	await Backend.new_session("Voz")
+	var r: Dictionary = await Backend.talk("chonita", "Buenas noches, doña.", true)
+	check(r["ok"] and r["data"]["audio_url"] != null, "talk con want_audio trae audio_url")
+	Sound.voice_enabled = true
+	await Sound.play_voice(r["data"]["audio_url"])
+	check(Sound.is_voice_playing() and Sound.voice_length() > 0.5, "la voz de Chonita suena (%.1f s)" % Sound.voice_length())
+	Sound.stop_voice()
+	var s: Dictionary = await Backend.stt(_test_wav())
+	var heard: String = str(s["data"].get("text", "")) if s["ok"] else str(s["error"])
+	print("    STT: ", heard)
+	check(s["ok"] and "plaza" in heard.to_lower(), "el micrófono se transcribe por /stt")
 
 
 func _press_journal() -> void:

@@ -47,6 +47,10 @@ func _zone_at(_pos: Vector2) -> String:
 	return room_id
 
 
+func _ambience_kind() -> String:
+	return "interior"
+
+
 func _here() -> String:
 	return room_id
 

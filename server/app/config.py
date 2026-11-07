@@ -36,10 +36,16 @@ class Settings:
     llm_reply_timeout_s: float = 12.0  # tope por respuesta en juego; luego, frase de respaldo
     warmup: bool = True
 
-    # Voz (B4)
-    stt_provider: str = "nvidia"
+    # Voz (B4): Magpie TTS y Parakeet ES por gRPC (Riva) en build.nvidia.com
+    stt_provider: str = "nvidia"  # nvidia | none
     stt_api_key: str = field(default="", repr=False)
-    tts_provider: str = "magpie"
+    tts_provider: str = "magpie"  # magpie | none
+    riva_server: str = "grpc.nvcf.nvidia.com:443"
+    tts_function_id: str = "877104f7-e885-42b9-8de8-f6e4c6303969"  # magpie-tts-multilingual
+    # Reconocedores en orden de preferencia; el calentamiento usa el primero que responda.
+    # parakeet-1_1b-rnnt-multilingual (responde hoy) y parakeet-ctc-0_6b-es (sin servidores el 2026-11-06).
+    asr_function_ids: str = "71203149-d3b7-4460-8231-1be2543a1fca,a9eeee8f-b509-4712-b19d-194361fa5f31"
+    voice_warmup: bool = True
 
     # Estado
     db_path: Path = ROOT / "server" / "sessions.db"
@@ -67,8 +73,12 @@ class Settings:
             llm_timeout_s=float(e("LLM_TIMEOUT_S", d.llm_timeout_s)),
             llm_reply_timeout_s=float(e("LLM_REPLY_TIMEOUT_S", d.llm_reply_timeout_s)),
             warmup=_bool(e("LLM_WARMUP"), d.warmup),
-            stt_provider=e("STT_PROVIDER", d.stt_provider),
+            stt_provider=e("STT_PROVIDER", d.stt_provider).strip().lower(),
             stt_api_key=e("STT_API_KEY", ""),
-            tts_provider=e("TTS_PROVIDER", d.tts_provider),
+            tts_provider=e("TTS_PROVIDER", d.tts_provider).strip().lower(),
+            riva_server=e("RIVA_SERVER", d.riva_server),
+            tts_function_id=e("TTS_FUNCTION_ID", d.tts_function_id),
+            asr_function_ids=e("ASR_FUNCTION_IDS", d.asr_function_ids),
+            voice_warmup=_bool(e("VOICE_WARMUP"), d.voice_warmup),
             db_path=Path(e("DB_PATH", str(d.db_path))),
         )

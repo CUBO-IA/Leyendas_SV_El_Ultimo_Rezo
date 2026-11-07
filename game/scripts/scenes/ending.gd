@@ -15,6 +15,8 @@ var _buttons: HBoxContainer
 func _ready() -> void:
 	theme = UiKit.theme()
 	ending = GameState.last_ending
+	Sound.play_ambience("ending")
+	Sound.bell(1)
 	if ending.is_empty():
 		# Abierta directo desde el editor: muestra el final malo de las fixtures.
 		var f: Variant = Paths.read_json(Paths.fixture("ending__malo"))

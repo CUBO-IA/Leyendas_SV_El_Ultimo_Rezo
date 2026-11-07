@@ -48,7 +48,7 @@ func _ready() -> void:
 	GameState.last_ending = Paths.read_json(Paths.fixture("ending__verdadero"))
 	await _show(SceneRouter.ENDING, "5 final verdadero", STEP + 4.0)
 	print("[tour] fin")
-	get_tree().quit()
+	Sound.quit_clean()
 
 
 func _show(path: String, label: String, secs: float = STEP) -> Node:

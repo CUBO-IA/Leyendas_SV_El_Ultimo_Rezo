@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import data, errors, game, rules
@@ -16,6 +17,7 @@ from .dialogue import SITUATIONS, Dialogue, clean_player_text, evidence_message
 from .errors import ApiError
 from .llm.provider import Provider, get_provider
 from .store import SessionStore
+from .voice import Voice, VoiceError
 
 log = logging.getLogger("leyendas")
 
@@ -71,7 +73,8 @@ async def _warmup(provider: Provider, state: LLMState) -> None:
         log.warning("Calentamiento falló: %s", exc)
 
 
-def create_app(settings: Settings | None = None, provider: Provider | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, provider: Provider | None = None,
+               voice: Voice | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
 
     @asynccontextmanager
@@ -87,6 +90,10 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             log.error("No se pudo crear el proveedor LLM: %s", exc)
         app.state.dialogue = Dialogue(app.state.provider, timeout_s=settings.llm_reply_timeout_s)
         app.state.locks = defaultdict(asyncio.Lock)  # un candado por sesión
+        app.state.voice = voice or Voice(settings)
+        voice_task = None
+        if settings.voice_warmup:
+            voice_task = asyncio.create_task(app.state.voice.warmup())
         task = None
         if app.state.provider is not None:
             if settings.warmup:
@@ -94,8 +101,9 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             else:
                 app.state.llm.warm = True
         yield
-        if task and not task.done():
-            task.cancel()
+        for t_ in (task, voice_task):
+            if t_ and not t_.done():
+                t_.cancel()
         if app.state.provider is not None:
             await app.state.provider.aclose()
         app.state.store.close()
@@ -111,8 +119,8 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             "status": "ok" if ok else "degraded",
             "model": st.provider.model if st.provider else settings.active_model,
             "warm": st.llm.warm,
-            "tts": False,  # B4
-            "stt": False,  # B4
+            "tts": st.voice.status.tts,
+            "stt": st.voice.status.stt,
             "demo_mode": settings.demo_mode,
         }
 
@@ -153,7 +161,8 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
                 "reply": said["reply"], "emotion": said["emotion"], "level": npc["level"],
                 "trust": npc["trust"], "fear": npc["fear"],
                 "new_evidence": outcome.new_evidence, "new_deductions": outcome.new_deductions,
-                "audio_url": None, "source": source, "state": public,
+                "audio_url": _audio(request, body.want_audio, npc["id"], said),
+                "source": source, "state": public,
             }
 
     @app.post("/present")
@@ -176,7 +185,8 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
                 "contradiction": outcome.changed_level, "level": npc["level"],
                 "new_deductions": outcome.new_deductions, "new_evidence": outcome.new_evidence,
                 "trust": npc["trust"], "fear": npc["fear"],
-                "audio_url": None, "source": source, "state": public,
+                "audio_url": _audio(request, body.want_audio, npc["id"], said),
+                "source": source, "state": public,
             }
 
     @app.post("/examine")
@@ -205,7 +215,43 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
             st.store.save(body.session_id, public, private)
             return ending
 
+    @app.get("/audio/{audio_file}")
+    async def audio(request: Request, audio_file: str):
+        aid = audio_file.removesuffix(".mp3")
+        path = None
+        if audio_file.endswith(".mp3"):
+            path = await request.app.state.voice.audio_path(aid)
+        if path is None:
+            return JSONResponse({"error": "bad_request", "detail": "Ese audio no existe o no se pudo generar."},
+                                status_code=404)
+        return FileResponse(path, media_type="audio/mpeg")
+
+    @app.post("/stt")
+    async def stt(request: Request):
+        """Recibe el WAV crudo (Content-Type: audio/wav, 16 bits, máx. 30 s)."""
+        body = await request.body()
+        if not body:
+            raise ApiError("bad_request", "Falta el audio (WAV en el cuerpo de la petición).")
+        if len(body) > 6 * 1024 * 1024:
+            raise ApiError("bad_request", "El audio es demasiado grande.")
+        try:
+            text = await request.app.state.voice.transcribe(body)
+        except VoiceError as exc:
+            raise ApiError("stt_failed", str(exc))
+        return {"text": text}
+
     return app
+
+
+def _audio(request: Request, want: bool, witness_id: str, said: dict) -> str | None:
+    """audio_url de la respuesta; la síntesis sigue en segundo plano."""
+    if not want:
+        return None
+    try:
+        return request.app.state.voice.request_audio(witness_id, said["reply"], said["emotion"])
+    except Exception as exc:  # la voz nunca tumba una respuesta de texto
+        log.warning("No se pudo agendar el audio: %s", exc)
+        return None
 
 
 def _load(request: Request, session_id: str) -> tuple[dict, dict]:

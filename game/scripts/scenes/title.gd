@@ -38,6 +38,7 @@ func _ready() -> void:
 	_status.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 16)
 	add_child(_status)
 	_buttons[0].grab_focus()
+	Sound.play_ambience("title")
 	_check_backend()
 
 
@@ -76,4 +77,4 @@ func _on_options() -> void:
 
 
 func _on_quit() -> void:
-	get_tree().quit()
+	Sound.quit_clean()

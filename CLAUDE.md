@@ -13,6 +13,7 @@ Juego de investigación sobrenatural en Godot 4.7.2 (GDScript), ambientado en Sa
 - Diálogo: se elige por .env tras la prueba de latencia de B1 (meta < 3 s). Opción 1: API de NVIDIA (build.nvidia.com, compatible con OpenAI). Opción 2: Ollama local con nemotron-3-nano:4b en CPU/iGPU (think=false, JSON con esquema). La que no gane queda de respaldo.
 - Decisión B1 (tools/smoke_llm.py, 10 preguntas a Chonita): gana la API de NVIDIA con nvidia/nemotron-3.5-lightning-30b-a3b (mediana 0.7 s, emociones variadas). nvidia/nemotron-3.5-bolt-e4b es la alternativa rápida; Ollama local (mediana 4.6 s) es el respaldo sin internet. La API acepta JSON por response_format json_schema (no guided_json); nvidia/nemotron-nano-3-30b-a3b da 404 en esta cuenta.
 - Voz de los NPC: Magpie TTS Multilingual (API de NVIDIA), MP3. Respaldo: Piper es_MX (CPU).
+- Decisión B4: Magpie TTS y el reconocedor van por gRPC (Riva, `nvidia-riva-client`) en grpc.nvcf.nvidia.com con la misma NVIDIA_API_KEY; la API de chat no tiene /audio. Voces ES-US por testigo en server/app/voice.py (Isabela y Diego cambian por emoción). STT: parakeet-1_1b-rnnt-multilingual (parakeet-ctc-0_6b-es no tenía servidores el 2026-11-06; queda segundo en ASR_FUNCTION_IDS). Nemotron 3.5 Transcribe exige cuenta aparte (DeepInfra/Baseten). Respaldos locales (Piper, faster-whisper) no instalados: si la voz falla el juego sigue con texto.
 - Voz del jugador a texto: Nemotron 3.5 Transcribe (API alojada). Respaldo: faster-whisper small (CPU).
 - Personajes: dataset nvidia/Nemotron-Personas-El-Salvador -> fichas JSON -> retratos. Sin GPU NVIDIA, SDXL local no es viable: los retratos se generan con una API de imágenes en la nube o se reduce a 1-2 emociones por personaje (se decide en B5). Los placeholders siempre funcionan.
 - Godot también tiene un Backend "mock" (responde con contract/fixtures/) para probar el cliente sin el motor y como plan B en la demo.
@@ -23,6 +24,7 @@ Juego de investigación sobrenatural en Godot 4.7.2 (GDScript), ambientado en Sa
 - Solo cambios que suman: un campo nuevo siempre es opcional.
 - Rutas: GET /health, POST /session, GET /session/{id}, POST /talk, POST /present, POST /examine, POST /accuse, POST /stt, GET /audio/{id}.mp3
 - Las deducciones viajan como objetos {id, text}: su texto vive solo en el servidor, así el cliente no lleva spoilers.
+- POST /stt recibe el WAV crudo en el cuerpo (Content-Type: audio/wav, 16 bits, máx. 30 s) y responde stt_response. El audio de /talk y /present se sintetiza en segundo plano: GET /audio/{id}.mp3 espera si aún no termina.
 
 ## IDs y archivos fijos
 - Testigos: chonita, chepe, chente, ramirez, padre_mauricio, tonito, beto, pilo, alcides, mercedes
@@ -70,5 +72,6 @@ Los prompts originales de cada fase están en docs/prompts_claude_code.md. Se in
 - Recorrido visual de A4 (pueblo en acto 3, iglesia, diario, acusación, final): `Godot --path game res://tests/visual_tour.tscn`.
 - Escenas a pie: game/scripts/explore/explore_base.gd (HUD, E, Tab, puertas); el pueblo y los interiores solo arman su mapa.
 - Fichas de personajes (B2): `.venv/Scripts/python -m server.pipelines.personas` (`--dry-run` para ver candidatos, `--only id --force` para regenerar). Descarga 1 parquet de Nemotron-Personas-El-Salvador (190 MB, caché de HF) y escribe server/data/characters/, content/generated/characters_public.json y server/CREDITS.md. Al LLM no se le pasa la pista ni la mentira; la voz Magpie concreta se asigna en B4 (voice.voice = null).
+- Voz en vivo: `.venv\Scripts\python tools\smoke_game.py --voice` (mide texto + voz y prueba /stt). En el interrogatorio se habla manteniendo Tab (V escribiría en la caja de texto). Audio del cliente: autoload Sound (buses, ambiente, voz MP3, micrófono); salir con Sound.quit_clean().
 - Sonidos sintetizados (sin licencias): `.venv\Scripts\python tools\make_sfx.py` -> game/assets/sfx/.
 - Arte del pueblo (baldosas, fachadas, sprites 16x24 en 4 direcciones): `.venv\Scripts\python tools\make_town_art.py`, y después `--import`. El plano está en game/scripts/town/town_layout.gd; los objetos de un lugar solo aparecen cuando el motor lo desbloquea.
