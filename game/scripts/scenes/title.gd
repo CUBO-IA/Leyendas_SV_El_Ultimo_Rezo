@@ -130,14 +130,9 @@ static func host_of(url: String) -> String:
 	return u.get_slice("/", 0).get_slice(":", 0)
 
 
-## "100.79.57.108" -> "http://100.79.57.108:8000" (respeta puerto o http:// si los traen).
+## "100.79.57.108" -> "http://100.79.57.108:8000" (ver Backend.normalize_url).
 static func url_for(ip_or_url: String) -> String:
-	var s: String = ip_or_url.strip_edges()
-	if not s.begins_with("http"):
-		s = "http://" + s
-	if s.trim_prefix("http://").trim_prefix("https://").get_slice("/", 0).find(":") == -1:
-		s += ":8000"
-	return s
+	return Backend.normalize_url(ip_or_url)
 
 
 static func game_label(g: Dictionary) -> String:
@@ -162,8 +157,8 @@ func _on_join_open() -> void:
 func _on_join_search() -> void:
 	for c: Node in _join_list.get_children():
 		c.queue_free()
-	if _join_ip.text.strip_edges() == "":
-		_join_msg.text = "Escribe la IP de la computadora con el motor."
+	if url_for(_join_ip.text) == "":
+		_join_msg.text = "Escribe la IP de la computadora con el motor (por ejemplo 100.79.57.108)."
 		return
 	Backend.set_mode("http")
 	Backend.set_base_url(url_for(_join_ip.text))

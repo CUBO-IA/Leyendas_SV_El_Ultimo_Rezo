@@ -736,6 +736,14 @@ func _test_presence() -> void:
 	check(title_script.url_for("100.79.57.108") == "http://100.79.57.108:8000"
 		and title_script.url_for("http://10.0.0.5:9000") == "http://10.0.0.5:9000"
 		and title_script.host_of("http://100.79.57.108:8000") == "100.79.57.108", "IP <-> URL del motor al unirse")
+	check(Backend.normalize_url("http://") == "" and Backend.normalize_url("http:/") == ""
+		and Backend.normalize_url("http://http://1.2.3.4:8000/") == "http://1.2.3.4:8000"
+		and Backend.normalize_url(" 1.2.3.4 ") == "http://1.2.3.4:8000"
+		and Backend.normalize_url("https://x.ts.net") == "https://x.ts.net:8000", "direcciones del motor mal escritas se corrigen")
+	var keep: String = Backend.base_url
+	Backend.set_base_url("http:/")
+	check(Backend.base_url == Backend.DEFAULT_URL, "una dirección sin IP no se guarda rota")
+	Backend.set_base_url(keep)
 	check(title_script.game_label({"host": "Fer", "act": 2, "clock": "00:13", "players": ["Fer", "Fae"]})
 		== "Partida de Fer · Acto II · 12:13 a. m. · 2 jugadores", "texto de cada partida en el lobby")
 	await Backend.new_session("Presencia")
