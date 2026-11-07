@@ -18,6 +18,9 @@ static func repo_root() -> String:
 	var exe_dir: String = OS.get_executable_path().get_base_dir()
 	candidates.append(exe_dir)
 	candidates.append(exe_dir.path_join(".."))
+	# AppImage: el ejecutable corre desde usr/bin y los datos quedan en la raíz del
+	# squashfs (dos niveles arriba). Sin esto, "Nueva partida" no encuentra fixtures.
+	candidates.append(exe_dir.path_join("..").path_join(".."))
 	for c: String in candidates:
 		var p: String = c.simplify_path()
 		if DirAccess.dir_exists_absolute(p.path_join("contract/fixtures")):

@@ -108,8 +108,11 @@ if [ "${1:-}" = "--appimage" ]; then
     APPDIR="$ROOT/game/export/AppDir"
     rm -rf "$APPDIR"
     mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/512x512/apps"
-    cp "$OUT/$BIN" "$APPDIR/usr/bin/LeyendasSV"
+    # Un solo binario en la raíz: así OS.get_executable_path() apunta a la raíz del
+    # squashfs, donde también quedan content/ y contract/ (ver Paths.repo_root()).
+    # usr/bin/LeyendasSV es solo un enlace para cumplir la convención; no duplicar 72 MB.
     cp "$OUT/$BIN" "$APPDIR/LeyendasSV"
+    ln -s "../../LeyendasSV" "$APPDIR/usr/bin/LeyendasSV"
     cp -R "$OUT/content" "$OUT/contract" "$OUT/assets_generated" "$APPDIR/"
     cat > "$APPDIR/LeyendasSV.desktop" <<'DESK'
 [Desktop Entry]
@@ -132,12 +135,14 @@ DESK
       cp "$ROOT/game/icon.svg" "$APPDIR/usr/share/icons/hicolor/512x512/apps/leyendas-sv.svg" 2>/dev/null || true
     fi
     cp "$APPDIR/usr/share/icons/hicolor/512x512/apps/"*.png "$APPDIR/.DirIcon" 2>/dev/null || cp "$ROOT/game/icon.svg" "$APPDIR/.DirIcon" 2>/dev/null || true
+    # AppRun ejecuta el binario de la raíz para que el exe_dir sea la raíz del squashfs
+    # (donde viven contract/fixtures y content/). Ver game/scripts/paths.gd.
     cat > "$APPDIR/AppRun" <<'RUN'
 #!/usr/bin/env bash
 HERE="$(dirname "$(readlink -f "$0")")"
-exec "$HERE/usr/bin/LeyendasSV" "$@"
+exec "$HERE/LeyendasSV" "$@"
 RUN
-    chmod +x "$APPDIR/AppRun" "$APPDIR/LeyendasSV" "$APPDIR/usr/bin/LeyendasSV"
+    chmod +x "$APPDIR/AppRun" "$APPDIR/LeyendasSV"
     rm -f "$APPIMAGE"
     ARCH=x86_64 appimagetool "$APPDIR" "$APPIMAGE"
     chmod +x "$APPIMAGE"
