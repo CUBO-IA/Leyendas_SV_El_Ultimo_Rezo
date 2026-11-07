@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from typing import Literal
@@ -111,7 +112,18 @@ def create_app(settings: Settings | None = None, provider: Provider | None = Non
 
     app = FastAPI(title="Leyendas SV — motor", version="0.1.0", lifespan=lifespan)
     errors.install(app)
-    presence = PresenceHub()  # experimental: partidas compartidas, los jugadores se ven en el mapa
+    presence = PresenceHub(settings.access_code)  # experimental: partidas compartidas
+
+    @app.middleware("http")
+    async def access_code(request: Request, call_next):
+        """Motor público (Funnel): sin el código de acceso solo responde /health."""
+        code = settings.access_code
+        if code and request.url.path != "/health":
+            given = request.headers.get("x-leyendas-code", "")
+            if not secrets.compare_digest(given.encode(), code.encode()):
+                return JSONResponse({"error": "forbidden", "detail": "Falta el código de acceso de esta partida."},
+                                    status_code=403)
+        return await call_next(request)
 
     @app.websocket("/ws/presence")
     async def ws_presence(ws: WebSocket):

@@ -32,3 +32,6 @@ tools/out/
 # hasta después del hackathon (el motor las lee del disco).
 server/data/
 docs/
+
+# Código de acceso del motor público (tools/motor_en_red.ps1 -Publico)
+server/.access_code

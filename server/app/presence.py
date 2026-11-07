@@ -21,6 +21,7 @@ import asyncio
 import json
 import logging
 import re
+import secrets
 import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -60,7 +61,8 @@ def clean_pos(msg: dict) -> dict | None:
 
 
 class PresenceHub:
-    def __init__(self) -> None:
+    def __init__(self, access_code: str = "") -> None:
+        self.access_code = access_code  # si no está vacío, el "hello" debe traerlo
         # id -> {"ws", "name", "s", "scene", "x", "y", "f", "m", "joined"}
         self.players: dict[str, dict] = {}
         self._lock = asyncio.Lock()
@@ -121,6 +123,10 @@ class PresenceHub:
             if not isinstance(hello, dict):
                 hello = {}
         except (WebSocketDisconnect, ValueError):
+            return
+        if self.access_code and not secrets.compare_digest(
+                str(hello.get("code", "")).encode(), self.access_code.encode()):
+            await ws.close(code=1008)  # sin el código de acceso no entra
             return
         name = clean_name(hello.get("name"))
         async with self._lock:

@@ -98,7 +98,11 @@ func _build_join() -> void:
 	col.add_child(UiKit.label("IP de la computadora con el motor (Tailscale o red local)", 18, UiKit.MUTED))
 	_join_ip = LineEdit.new()
 	_join_ip.placeholder_text = "100.79.57.108"
-	_join_ip.text = host_of(Backend.base_url) if Backend.mode == "http" else ""
+	# Con servidor.txt (zip para todos) va la dirección pública completa; si no, la IP de siempre.
+	if Backend.server_url != "":
+		_join_ip.text = Backend.server_url
+	else:
+		_join_ip.text = host_of(Backend.base_url) if Backend.mode == "http" else ""
 	_join_ip.custom_minimum_size = Vector2(560, 46)
 	_join_ip.text_submitted.connect(func(_t: String) -> void: _on_join_search())  # Enter busca
 	col.add_child(_join_ip)
@@ -152,6 +156,8 @@ func _on_join_open() -> void:
 	_join.visible = true
 	_join_msg.text = "Escribe la IP y busca las partidas abiertas."
 	_join_ip.grab_focus()
+	if Backend.server_url != "":
+		_on_join_search()  # el zip ya trae el servidor: busca solo
 
 
 func _on_join_search() -> void:

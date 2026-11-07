@@ -7,15 +7,22 @@ extends Node
 
 func request_json(method: int, url: String, body: Variant, timeout: float) -> Dictionary:
 	var payload: String = "" if body == null else JSON.stringify(body)
-	var headers: PackedStringArray = ["Accept: application/json"]
+	var headers: PackedStringArray = auth_headers(["Accept: application/json"])
 	if body != null:
 		headers.append("Content-Type: application/json")
 	return await _send(method, url, headers, payload.to_utf8_buffer(), timeout)
 
 
 func request_raw(url: String, data: PackedByteArray, content_type: String, timeout: float) -> Dictionary:
-	var headers: PackedStringArray = ["Accept: application/json", "Content-Type: " + content_type]
+	var headers: PackedStringArray = auth_headers(["Accept: application/json", "Content-Type: " + content_type])
 	return await _send(HTTPClient.METHOD_POST, url, headers, data, timeout)
+
+
+## Agrega el código de acceso del motor público (servidor.txt), si hay.
+static func auth_headers(headers: PackedStringArray) -> PackedStringArray:
+	if Backend.access_code != "":
+		headers.append("X-Leyendas-Code: " + Backend.access_code)
+	return headers
 
 
 func _send(method: int, url: String, headers: PackedStringArray, data: PackedByteArray,
