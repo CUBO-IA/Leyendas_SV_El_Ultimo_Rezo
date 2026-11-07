@@ -94,7 +94,7 @@ func _process(delta: float) -> void:
 	_ws.poll()
 	var st: int = _ws.get_ready_state()
 	if st == WebSocketPeer.STATE_OPEN and _state != WebSocketPeer.STATE_OPEN:
-		_ws.send_text(JSON.stringify({"t": "hello", "s": GameState.session_id(), "code": Backend.access_code,
+		_ws.send_text(JSON.stringify({"t": "hello", "s": GameState.session_id(),
 			"name": player_name if player_name != "" else default_name()}))
 	_state = st
 	if st == WebSocketPeer.STATE_OPEN:

@@ -739,11 +739,7 @@ func _test_presence() -> void:
 	check(Backend.normalize_url("http://") == "" and Backend.normalize_url("http:/") == ""
 		and Backend.normalize_url("http://http://1.2.3.4:8000/") == "http://1.2.3.4:8000"
 		and Backend.normalize_url(" 1.2.3.4 ") == "http://1.2.3.4:8000"
-		and Backend.normalize_url("https://x.ts.net") == "https://x.ts.net", "direcciones del motor mal escritas se corrigen")
-	var prev_code: String = Backend.access_code
-	Backend.access_code = "nopal-42"
-	check("X-Leyendas-Code: nopal-42" in HttpBackend.auth_headers(["Accept: application/json"]), "el código de acceso viaja en las peticiones")
-	Backend.access_code = prev_code
+		and Backend.normalize_url("https://x.ts.net") == "https://x.ts.net:8000", "direcciones del motor mal escritas se corrigen")
 	var keep: String = Backend.base_url
 	Backend.set_base_url("http:/")
 	check(Backend.base_url == Backend.DEFAULT_URL, "una dirección sin IP no se guarda rota")

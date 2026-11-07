@@ -151,7 +151,7 @@ func play_voice(audio_url: Variant) -> void:
 	var token: int = _voice_token
 	_voice.stop()
 	_voice_req.cancel_request()
-	var err: Error = _voice_req.request(url, HttpBackend.auth_headers([]))
+	var err: Error = _voice_req.request(url)
 	if err != OK:
 		push_warning("[Sound] no se pudo pedir la voz: %s" % error_string(err))
 		return

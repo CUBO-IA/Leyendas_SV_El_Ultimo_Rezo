@@ -78,26 +78,3 @@ def test_el_final_llega_a_toda_la_partida():
     asyncio.run(hub.notify_ended("s1", ending))
     assert a.sent == b.sent == [{"t": "ended", "s": "s1", "ending": ending}] and c.sent == []
     assert [g["host"] for g in hub.lobby()] == ["Fer", "Otro"]
-
-
-def test_codigo_de_acceso(make_client):
-    from .conftest import assert_valid
-    c = make_client(access_code="nopal-42")
-    assert c.get("/health").status_code == 200  # /health queda libre
-    r = c.post("/session", json={})
-    assert r.status_code == 403 and r.json()["error"] == "forbidden"
-    assert_valid("api_error", r.json())
-    assert c.post("/session", json={}, headers={"X-Leyendas-Code": "otro"}).status_code == 403
-    ok = c.post("/session", json={}, headers={"X-Leyendas-Code": "nopal-42"})
-    assert ok.status_code == 200
-    sid = ok.json()["session_id"]
-    # WebSocket: sin el código no entra; con el código sí.
-    import pytest
-    from starlette.websockets import WebSocketDisconnect
-    with pytest.raises(WebSocketDisconnect):
-        with c.websocket_connect("/ws/presence") as ws:
-            ws.send_json({"t": "hello", "name": "Intruso", "s": sid})
-            ws.receive_json()
-    with c.websocket_connect("/ws/presence") as ws:
-        ws.send_json({"t": "hello", "name": "Fer", "s": sid, "code": "nopal-42"})
-        assert ws.receive_json()["t"] == "welcome"

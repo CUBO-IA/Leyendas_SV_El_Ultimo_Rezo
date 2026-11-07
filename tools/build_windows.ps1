@@ -10,7 +10,7 @@
 #
 # -Name OtraCarpeta: genera en game\export\OtraCarpeta\ (p. ej. una versión experimental
 # sin tocar la de siempre).
-param([string]$Name = "LeyendasSV", [string]$ServerUrl = "", [string]$Code = "")
+param([string]$Name = "LeyendasSV")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root "game\export\$Name"
@@ -47,10 +47,6 @@ foreach ($rel in @("content\public", "content\generated", "contract\fixtures", "
 }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-# Experimental: con -ServerUrl/-Code, "Unirse a una partida" busca solo en ese motor.
-if ($ServerUrl) {
-    [IO.File]::WriteAllText((Join-Path $out "servidor.txt"), "url=$ServerUrl`r`ncodigo=$Code`r`n", $utf8)
-}
 [IO.File]::WriteAllText((Join-Path $out "Jugar con el motor.bat"),
     "@echo off`r`nrem Requiere el motor corriendo: .venv\Scripts\python -m server`r`nstart `"`" `"%~dp0LeyendasSV.exe`" -- --backend=http --api=http://127.0.0.1:8000`r`n", $utf8)
 [IO.File]::WriteAllText((Join-Path $out "Jugar sin motor (demo).bat"),

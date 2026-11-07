@@ -22,7 +22,6 @@
         "session_ended",
         "model_not_ready",
         "stt_failed",
-        "forbidden",
         "internal"
       ]
     },

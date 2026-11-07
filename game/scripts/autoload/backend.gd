@@ -22,11 +22,6 @@ const MODES: Array[String] = ["mock", "http"]
 
 var mode: String = "mock"
 var base_url: String = DEFAULT_URL
-## Experimental (servidor.txt junto al juego): la partida pública y su código de acceso.
-## "Unirse a una partida" usa server_url; el código viaja en todas las peticiones.
-var server_url: String = ""
-var access_code: String = ""
-const SERVER_FILE := "servidor.txt"
 var timeout_s: float = 20.0
 var mock_delay_s: float = 0.25  ## latencia simulada del mock
 
@@ -40,7 +35,6 @@ func _ready() -> void:
 	_http = HttpBackend.new()
 	_http.name = "Http"
 	add_child(_http)
-	_load_server_file()
 	_load_settings()
 	_apply_cmdline()
 	print("[Backend] modo=%s url=%s" % [mode, base_url])
@@ -151,8 +145,8 @@ static func normalize_url(url: String) -> String:
 	var host: String = s.get_slice("/", 0).strip_edges()
 	if host == "" or host.begins_with(":"):
 		return ""
-	if host.find(":") == -1 and not secure:
-		host += ":8000"  # el motor en la red local; con https (Funnel) va al 443
+	if host.find(":") == -1:
+		host += ":8000"
 	return ("https://" if secure else "http://") + host
 
 
@@ -176,23 +170,6 @@ func _load_settings() -> void:
 	set_base_url(str(cfg.get_value("backend", "base_url", base_url)))
 
 
-## servidor.txt (lo pone el build con -ServerUrl/-Code):  url=https://...  codigo=...
-func _load_server_file() -> void:
-	var path: String = Paths.repo_root().path_join(SERVER_FILE)
-	if not FileAccess.file_exists(path):
-		return
-	for line: String in FileAccess.get_file_as_string(path).split("\n"):
-		var kv: PackedStringArray = line.strip_edges().split("=", true, 1)
-		if kv.size() != 2 or line.strip_edges().begins_with("#"):
-			continue
-		match kv[0].strip_edges().to_lower():
-			"url":
-				server_url = normalize_url(kv[1])
-			"codigo", "code":
-				access_code = kv[1].strip_edges()
-	print("[Backend] servidor.txt: %s (código %s)" % [server_url, "sí" if access_code != "" else "no"])
-
-
 func _apply_cmdline() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--backend="):
@@ -201,8 +178,6 @@ func _apply_cmdline() -> void:
 				mode = m
 		elif arg.begins_with("--api="):
 			set_base_url(arg.substr(6))
-		elif arg.begins_with("--code="):
-			access_code = arg.substr(7).strip_edges()
 
 
 # ---------- despacho ----------
