@@ -3,6 +3,8 @@
 
 - memoria: últimos 6 turnos con ese testigo + un resumen de lo anterior;
 - filtros de entrada (texto del jugador) y de salida (spoilers o romper personaje);
+- detalles inventados (llm/grounding.py): horas o nombres que el testigo no sabe. Se le
+  pide una corrección; si insiste, se quitan esas frases;
 - caché de respuestas y frases de respaldo si el modelo falla o tarda.
 """
 from __future__ import annotations
@@ -11,10 +13,12 @@ import asyncio
 import hashlib
 import logging
 import re
+import time
 import unicodedata
 from collections import OrderedDict
 
 from . import data
+from .llm.grounding import drop_invented_sentences, invented
 from .llm.prompts import TALK_SCHEMA, normalize_talk, witness_messages, witness_system_prompt
 from .llm.provider import Provider
 
@@ -22,6 +26,9 @@ log = logging.getLogger("leyendas.dialogue")
 
 HISTORY_TURNS = 6  # pares pregunta/respuesta que van completos al prompt
 MAX_REPLY_CHARS = 600  # talk_response.reply maxLength
+# 0.5 en vez de 0.7: con tools/eval_grounding.py el testigo se apega más a su guía
+# (cuenta su pista en vez de adornar) sin perder su forma de hablar.
+TEMPERATURE = 0.5
 
 # Términos que el testigo no puede decir salvo que estén en la guía de su nivel actual.
 SPOILER_TERMS = ["padre sin cabeza", "esteban", "nemotron", "chatgpt",
@@ -121,25 +128,56 @@ class Dialogue:
             return None, "fallback"
 
         msgs = witness_messages(wid, level, trust, fear, history, user_msg, situation, summary)
-        try:
-            res = await asyncio.wait_for(self.provider.chat(msgs, schema=TALK_SCHEMA),
-                                         timeout=self.timeout_s)
-        except Exception as exc:  # red, cuota, tiempo: el juego sigue con respaldo
-            log.warning("LLM falló para %s: %s", wid, exc or type(exc).__name__)
-            return None, "fallback"
-        talk = normalize_talk(res.data)
+        # Lo que el testigo puede saber: su prompt y lo que le dijo el investigador.
+        known = "\n".join([msgs[0]["content"]] + [m["content"] for m in msgs[1:] if m["role"] == "user"])
+        t0 = time.monotonic()
+        talk = await self._ask(wid, msgs, self.timeout_s)
         if talk is None:
-            log.warning("LLM devolvió algo inutilizable para %s: %.120s", wid, res.text)
             return None, "fallback"
-        talk["reply"] = tidy(talk["reply"])
-        bad = leaks(talk["reply"], msgs[0]["content"])
-        if bad:
-            log.warning("Filtro de salida (%s) para %s: %s", ", ".join(bad), wid, talk["reply"])
-            return None, "fallback"
+        found = invented(talk["reply"], known)
+        if found:
+            log.info("Detalles inventados por %s (%s): %s", wid, "; ".join(found), talk["reply"])
+            first = talk
+            left = self.timeout_s - (time.monotonic() - t0)
+            retry = None
+            if left > 2.0:
+                fix = (f"{user_msg}\n\n[Nota para ti, no la repitas: no menciones {', '.join(found)}; "
+                       "eso no lo sabes. Si no sabes algo, dilo en personaje.]")
+                retry = await self._ask(wid, msgs[:-1] + [{"role": "user", "content": fix}], left)
+            if retry is not None and not invented(retry["reply"], known):
+                talk = retry
+            else:
+                # Insiste: se quedan solo las frases sin detalles inventados.
+                base = retry or first
+                kept = drop_invented_sentences(base["reply"], known) or \
+                    drop_invented_sentences(first["reply"], known)
+                if not kept:
+                    log.warning("Todo inventado para %s; frase de respaldo", wid)
+                    return None, "fallback"
+                talk = {**base, "reply": kept}
         self._cache[key] = dict(talk)
         if len(self._cache) > self._cache_size:
             self._cache.popitem(last=False)
         return talk, "llm"
+
+    async def _ask(self, wid: str, msgs: list[dict], timeout: float) -> dict | None:
+        """Una llamada al modelo con normalización y filtro de spoilers. None si no sirve."""
+        try:
+            res = await asyncio.wait_for(
+                self.provider.chat(msgs, schema=TALK_SCHEMA, temperature=TEMPERATURE), timeout=timeout)
+        except Exception as exc:  # red, cuota, tiempo: el juego sigue con respaldo
+            log.warning("LLM falló para %s: %s", wid, exc or type(exc).__name__)
+            return None
+        talk = normalize_talk(res.data)
+        if talk is None:
+            log.warning("LLM devolvió algo inutilizable para %s: %.120s", wid, res.text)
+            return None
+        talk["reply"] = tidy(talk["reply"])
+        bad = leaks(talk["reply"], msgs[0]["content"])
+        if bad:
+            log.warning("Filtro de salida (%s) para %s: %s", ", ".join(bad), wid, talk["reply"])
+            return None
+        return talk
 
     # ---------- casos de uso ----------
 
