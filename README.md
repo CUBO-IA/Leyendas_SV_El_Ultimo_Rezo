@@ -14,13 +14,15 @@ El jugador explora el pueblo, interroga a testigos controlados por IA (con voz),
 - **Modo demo sin motor**: backend `mock` que responde con los fixtures del contrato.
 - **Testigos que no inventan**: el prompt les da solo lo que saben y un verificador corrige nombres u horas inventados.
 - **Fácil de jugar**: clic o teclado para caminar e interactuar; micrófono de un clic (se corta solo al callarte) y preguntas sugeridas.
+- **Jugar juntos**: varios jugadores se unen a la misma partida, se ven en el mapa y resuelven la misma investigación (lo que encuentra uno le aparece a todos; si alguien acusa, todos ven el final).
+- **Ambiente**: fachadas del equipo, vecinos con frases propias, el cementerio en el Acto II, campanadas por tiempo, miedo del jugador, niebla y tarjetas de cada acto.
 - **Build de Windows**: `.exe` autocontenido para el cliente; el motor se corre aparte (ver abajo).
 
 ## Arquitectura
 
 ```text
 Godot 4.7.2 (game/) ──HTTP/JSON──► FastAPI (server/) ──► NVIDIA API / Ollama
-                                    │
+                    ◄─WebSocket──►  │  (partidas compartidas: quién está dónde)
                                     └─ único que conoce la solución (server/data/)
 ```
 
@@ -28,7 +30,7 @@ Godot 4.7.2 (game/) ──HTTP/JSON──► FastAPI (server/) ──► NVIDIA 
 - **Motor** (`server/`): Python 3.12 + FastAPI. `rules.py` decide niveles, evidencias, actos y finales; `dialogue.py` solo redacta con el LLM.
 - **Contrato** (`contract/`): JSON Schema como fuente de verdad + fixtures válidos.
 
-Endpoints: `GET /health`, `POST /session`, `GET /session/{id}`, `POST /talk`, `POST /present`, `POST /examine`, `POST /accuse`, `POST /stt`, `GET /audio/{id}.mp3`.
+Endpoints: `GET /health`, `POST /session`, `GET /session/{id}`, `POST /talk`, `POST /present`, `POST /examine`, `POST /accuse`, `POST /stt`, `GET /audio/{id}.mp3`, `GET /lobby` y el WebSocket `/ws/presence` (partidas compartidas).
 
 ## Estructura del repositorio
 
@@ -70,15 +72,21 @@ copy .env.example .env   # y completa NVIDIA_API_KEY
 1. Abre Godot → **Project → Import** → selecciona `game/project.godot`.
 2. Pulsa **F5** (ejecutar). Por defecto usa el backend `mock`; para jugar contra el motor real, en **Opciones** cambia a backend `http` o ejecuta con `-- --backend=http`.
 
-### Jugar en red (varias computadoras, cada una con su partida)
+### Jugar juntos (varias computadoras, la misma partida)
 
-En la computadora con el motor:
+En la computadora con el motor (el anfitrión):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\motor_en_red.ps1
 ```
 
-Abre el motor a la red solo mientras esa ventana está abierta (no cambia el `.env`) y muestra la IP. En las demás computadoras, con el zip del juego, doble clic en **Jugar en red.bat** y escribir esa IP. La red debe estar como **privada** en Windows (si es pública, el firewall bloquea a los demás). Probado con 8 partidas a la vez: sin errores y sin mezclarse (`tools\smoke_lan.py`). Cualquiera en esa red puede usar el motor: úsalo solo en redes de confianza (o con Tailscale).
+Abre el motor a la red solo mientras esa ventana está abierta (no cambia el `.env`) y muestra las IP (red local y Tailscale).
+
+1. **Anfitrión:** abre el juego (**Jugar con el motor.bat**) y pulsa **Nueva partida**.
+2. **Los demás:** con el zip del juego, abren **LeyendasSV.exe** → **Unirse a una partida** → escriben la IP del anfitrión y su nombre → **Buscar partidas** → eligen "Partida de …".
+3. Se ven en el mapa con su nombre encima y comparten la investigación.
+
+La red debe estar como **privada** en Windows (si es pública, el firewall bloquea a los demás); en redes que no son de confianza, usen **Tailscale** con la IP `100.x` del anfitrión. Para probar solo: `.venv\Scripts\python tools\presence_bot.py` agrega un jugador de prueba que se une a tu partida. Carga probada: 8 jugadores a la vez sin errores (`tools\smoke_lan.py`). Cualquiera en esa red puede usar el motor (y tu clave de NVIDIA): úsalo solo en redes de confianza.
 
 ### 3. Build de Windows
 
