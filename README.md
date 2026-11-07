@@ -70,6 +70,16 @@ copy .env.example .env   # y completa NVIDIA_API_KEY
 1. Abre Godot → **Project → Import** → selecciona `game/project.godot`.
 2. Pulsa **F5** (ejecutar). Por defecto usa el backend `mock`; para jugar contra el motor real, en **Opciones** cambia a backend `http` o ejecuta con `-- --backend=http`.
 
+### Jugar en red (varias computadoras, cada una con su partida)
+
+En la computadora con el motor:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\motor_en_red.ps1
+```
+
+Abre el motor a la red solo mientras esa ventana está abierta (no cambia el `.env`) y muestra la IP. En las demás computadoras, con el zip del juego, doble clic en **Jugar en red.bat** y escribir esa IP. La red debe estar como **privada** en Windows (si es pública, el firewall bloquea a los demás). Probado con 8 partidas a la vez: sin errores y sin mezclarse (`tools\smoke_lan.py`). Cualquiera en esa red puede usar el motor: úsalo solo en redes de confianza (o con Tailscale).
+
 ### 3. Build de Windows
 
 ```powershell

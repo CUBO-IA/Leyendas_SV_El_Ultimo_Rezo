@@ -36,11 +36,17 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
     "@echo off`r`nrem Requiere el motor corriendo: .venv\Scripts\python -m server`r`nstart `"`" `"%~dp0LeyendasSV.exe`" -- --backend=http --api=http://127.0.0.1:8000`r`n", $utf8)
 [IO.File]::WriteAllText((Join-Path $out "Jugar sin motor (demo).bat"),
     "@echo off`r`nrem Modo mock: respuestas de ejemplo, sin IA ni internet.`r`nstart `"`" `"%~dp0LeyendasSV.exe`" -- --backend=mock`r`n", $utf8)
+[IO.File]::WriteAllText((Join-Path $out "Jugar en red.bat"),
+    "@echo off`r`nrem Juega contra el motor de otra computadora de la misma red (tools\motor_en_red.ps1).`r`nset /p IP=IP de la computadora con el motor (ej. 192.168.1.50): `r`nif `"%IP%`"==`"`" exit /b`r`nstart `"`" `"%~dp0LeyendasSV.exe`" -- --backend=http --api=http://%IP%:8000`r`n", $utf8)
 [IO.File]::WriteAllText((Join-Path $out "LEEME.txt"), @"
-Leyendas SV: El Último Rezo de las Ánimas (v1.0, Windows)
+Leyendas SV: El Último Rezo de las Ánimas (Windows)
 
 - "Jugar con el motor.bat": la versión completa, con testigos de IA y voz.
   Antes, desde la raíz del repo: .venv\Scripts\python -m server
+- "Jugar en red.bat": varias computadoras de la misma red juegan contra un solo
+  motor, cada una con su propia partida. En la computadora con el motor:
+  powershell -ExecutionPolicy Bypass -File tools\motor_en_red.ps1
+  (muestra la IP que hay que escribir aquí).
 - "Jugar sin motor (demo).bat": respuestas de ejemplo, sin internet.
 - LeyendasSV.exe a secas usa el modo guardado en Opciones.
 
