@@ -7,14 +7,29 @@
 #   LeyendasSV.exe (pck incrustado) + content\, contract\fixtures\, assets_generated\portraits\
 #   (Paths.repo_root los busca junto al exe) + dos lanzadores .bat.
 # Nada de server\ ni .env: la solución del caso nunca viaja con el cliente.
+#
+# -Name OtraCarpeta: genera en game\export\OtraCarpeta\ (p. ej. una versión experimental
+# sin tocar la de siempre).
+param([string]$Name = "LeyendasSV")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$out = Join-Path $root "game\export\LeyendasSV"
+$out = Join-Path $root "game\export\$Name"
 $godot = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_*" -Recurse `
     -Filter "Godot_v4.7.2-stable_win64_console.exe" | Select-Object -First 1
 if (-not $godot) { throw "No encuentro Godot 4.7.2 (consola)." }
 
+# Si ese juego está abierto, no se borra nada: borraría sus datos a medias.
+$running = Get-Process -Name "LeyendasSV" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -and $_.Path.StartsWith($out, [StringComparison]::OrdinalIgnoreCase) }
+if ($running) { throw "El juego de $out está abierto (PID $($running.Id -join ', ')). Ciérralo o usa -Name OtraCarpeta." }
+
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+# game\export\ está dentro del proyecto: sin .gdignore, Godot importaría (y empaquetaría)
+# los builds anteriores que haya ahí.
+$exportDir = Join-Path $root "game\export"
+New-Item -ItemType Directory -Force $exportDir | Out-Null
+$gdignore = Join-Path $exportDir ".gdignore"
+if (-not (Test-Path $gdignore)) { New-Item -ItemType File $gdignore | Out-Null }
 New-Item -ItemType Directory -Force $out | Out-Null
 
 Write-Host "1/4 Importando recursos..."
@@ -58,7 +73,7 @@ Créditos de retratos y personajes: assets_generated\portraits\CREDITOS.md
 "@, $utf8)
 
 Write-Host "4/4 Comprimiendo..."
-$zip = Join-Path $root "game\export\LeyendasSV-windows.zip"
+$zip = Join-Path $root "game\export\$Name-windows.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path $out -DestinationPath $zip
 "{0:N1} MB  {1}" -f ((Get-Item $zip).Length / 1MB), $zip
