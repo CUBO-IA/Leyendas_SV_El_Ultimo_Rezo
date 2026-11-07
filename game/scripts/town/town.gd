@@ -26,6 +26,10 @@ func _build_map() -> void:
 	for to: String in TownLayout.DOORS:
 		var d: Array = TownLayout.DOORS[to]
 		spawn_door(to, d[1], TownLayout.to_world(d[0]))
+	for v: Dictionary in ContentDB.villagers:  # vecinos de ambiente
+		var spot: Array = v.get("spot", [])
+		if spot.size() == 2:
+			spawn_villager(v, TownLayout.to_world(Vector2i(int(spot[0]), int(spot[1]))))
 	var start: Vector2i = TownLayout.PLAYER_START
 	if GameState.town_spawn != Vector2i(-1, -1):
 		start = GameState.town_spawn

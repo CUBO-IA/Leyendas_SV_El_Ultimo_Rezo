@@ -6,6 +6,8 @@ var world: Dictionary = {}
 var characters: Dictionary = {}
 var evidence: Dictionary = {}
 var generated: Dictionary = {}
+## Vecinos de ambiente (content/public/villagers.json): frases sueltas por acto, sin IA.
+var villagers: Array = []
 
 var _witnesses: Dictionary = {}
 var _suspects: Dictionary = {}
@@ -22,6 +24,7 @@ func reload() -> void:
 	world = _load_dict(Paths.content("public/world.json"))
 	characters = _load_dict(Paths.content("public/characters.json"))
 	evidence = _load_dict(Paths.content("public/evidence.json"))
+	villagers = _load_dict(Paths.content("public/villagers.json")).get("villagers", [])
 	# Fichas públicas de B2: {"source", "license", "witnesses": [{id, full_name, age, occupation, bio}]}
 	var gen: Variant = Paths.read_json(Paths.content("generated/characters_public.json"))
 	generated = {}

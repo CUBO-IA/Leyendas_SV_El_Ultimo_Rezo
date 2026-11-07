@@ -14,6 +14,7 @@ from __future__ import annotations
 import colorsys
 import hashlib
 import json
+import sys
 import random
 from pathlib import Path
 
@@ -354,6 +355,10 @@ def make_chars() -> None:
     specs["ramirez"]["hat"] = (40, 50, 80)
     specs["alcides"]["hat"] = (90, 80, 50)
     specs["tonito"]["hair"] = (60, 40, 20)
+    # Vecinos de ambiente (content/public/villagers.json): colores de su campo "look".
+    vill = json.loads((ROOT / "content/public/villagers.json").read_text(encoding="utf-8"))
+    for v in vill["villagers"]:
+        specs[v["id"]] = {k: tuple(c) for k, c in v.get("look", {}).items()} or dict(body=char_color(v["id"]))
     for cid, kw in specs.items():
         sheet = Image.new("RGBA", (16 * 12, 24), (0, 0, 0, 0))
         d = ImageDraw.Draw(sheet)
@@ -365,6 +370,10 @@ def make_chars() -> None:
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    if "--chars" in sys.argv:  # solo los sprites de personajes (testigos, jugador y vecinos)
+        make_chars()
+        print("Personajes en", OUT / "chars")
+        return
     make_tiles()
     sizes = make_facades()
     make_props()

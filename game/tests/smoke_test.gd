@@ -22,6 +22,7 @@ func _ready() -> void:
 		await _test_a4()
 		await _test_sound()
 		await _test_night()
+		await _test_villagers()
 	else:
 		await _test_http()
 		await _test_full_game_http()
@@ -642,6 +643,39 @@ func _test_sound() -> void:
 
 func _test_wav() -> PackedByteArray:
 	return FileAccess.get_file_as_bytes("res://tests/assets/pregunta_plaza.wav")
+
+
+## Vecinos de ambiente: aparecen, pasean y dicen frases por acto (sin motor ni IA).
+func _test_villagers() -> void:
+	print("  -- vecinos de ambiente")
+	check(ContentDB.villagers.size() == 6, "6 vecinos en villagers.json")
+	var sprites_ok: bool = true
+	for v: Dictionary in ContentDB.villagers:
+		sprites_ok = sprites_ok and ResourceLoader.exists("res://assets/town/chars/%s.png" % v["id"])
+		for act: String in ["1", "2", "3"]:
+			sprites_ok = sprites_ok and not (v["lines"][act] as Array).is_empty()
+	check(sprites_ok, "cada vecino tiene sprite y frases para los 3 actos")
+	await Backend.new_session("Vecinos")
+	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
+	add_child(town)
+	await _frames(3)
+	var vill: Dictionary = town.get("villagers")
+	check(vill.size() == 6, "los 6 vecinos en el pueblo")
+	var neto: Villager = vill["cipote_neto"]
+	check(town.call("interactable_at", (neto.get_node("Interactable") as Node2D).global_position) != null, "el clic reconoce a un vecino")
+	var box: MessageBox = town.get("message_box")
+	town.call("interact", neto.get_node("Interactable"))
+	await _frames(3)
+	var first: String = str(neto.data["lines"]["1"][0])
+	check(box.is_open() and neto.talking, "hablar con Neto abre la caja y se queda quieto")
+	box.advance()
+	box.advance()
+	await _frames(3)
+	check(not box.is_open() and not neto.talking and int(GameState.chatter["cipote_neto"]) == 1, "la caja se cierra y Neto vuelve a pasear")
+	check(neto.next_line(1, 0) == first and neto.next_line(1, 1) != first, "la siguiente vez dice otra frase")
+	check(neto.next_line(2, 0) == str(neto.data["lines"]["2"][0]), "en el acto II cambian sus frases")
+	town.queue_free()
+	await _frames(2)
 
 
 var _bells: Array = []

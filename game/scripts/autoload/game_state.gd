@@ -18,6 +18,8 @@ var interior_from: String = ""
 var town_spawn: Vector2i = Vector2i(-1, -1)
 ## Ya sonó la campanada de las 11:47 en esta partida.
 var bell_rung: bool = false
+## Vecinos de ambiente: cuántas veces se le ha hablado a cada uno (rota sus frases).
+var chatter: Dictionary = {}
 
 
 func apply_state(state: Dictionary) -> void:
@@ -40,6 +42,7 @@ func reset() -> void:
 	interior_from = ""
 	town_spawn = Vector2i(-1, -1)
 	bell_rung = false
+	chatter = {}
 
 
 func add_line(witness_id: String, who: String, text: String) -> void:

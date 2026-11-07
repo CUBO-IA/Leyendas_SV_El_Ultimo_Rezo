@@ -23,6 +23,7 @@ var accusation: Accusation
 var objects: Dictionary = {}    ## object_id -> Node2D (marcador + Interactable)
 var witnesses: Dictionary = {}  ## witness_id -> Node2D
 var doors: Dictionary = {}      ## destino -> Node2D
+var villagers: Dictionary = {}  ## vecino_id -> Villager (ambiente, sin IA)
 
 var _busy: bool = false
 var _known_unlocked: Array = []
@@ -262,6 +263,13 @@ func spawn_witness(id: String, at: Vector2) -> Node2D:
 	return npc
 
 
+func spawn_villager(v: Dictionary, at: Vector2) -> Villager:
+	var n: Villager = Villager.create(v, at)
+	world.add_child(n)
+	villagers[str(v["id"])] = n
+	return n
+
+
 static func add_rect_collision(body: CollisionObject2D, rect: Rect2) -> void:
 	var shape: CollisionShape2D = CollisionShape2D.new()
 	var r: RectangleShape2D = RectangleShape2D.new()
@@ -368,7 +376,7 @@ func click_at(world_pos: Vector2) -> void:
 func interactable_at(world_pos: Vector2) -> Interactable:
 	var best: Interactable = null
 	var best_d: float = INF
-	for group: Dictionary in [witnesses, objects, doors]:
+	for group: Dictionary in [witnesses, villagers, objects, doors]:
 		for node: Node2D in group.values():
 			if not node.visible:
 				continue
@@ -408,6 +416,8 @@ func interact(target: Interactable) -> void:
 			await _talk_to(target.target_id)
 		"door":
 			await use_door(target.target_id)
+		"villager":
+			await chat_with(target.target_id)
 		_:
 			await examine_object(target.target_id)
 	if is_inside_tree():
@@ -440,6 +450,21 @@ func _talk_to(witness_id: String) -> void:
 	hud.visible = true
 	if npc:
 		(npc.get_node("Sprite") as AnimatedSprite2D).play("idle_down")
+
+
+## Vecino de ambiente: una frase del acto actual (rota entre sus frases). Sin motor ni IA.
+func chat_with(villager_id: String) -> void:
+	var v: Villager = villagers.get(villager_id)
+	if v == null:
+		return
+	v.talking = true
+	v.face(player.global_position)
+	var i: int = int(GameState.chatter.get(villager_id, 0))
+	GameState.chatter[villager_id] = i + 1
+	var title: String = "%s, %s" % [v.data.get("name", ""), v.data.get("role", "")]
+	await message_box.show_message(title, v.next_line(GameState.act(), i))
+	if is_instance_valid(v):
+		v.talking = false
 
 
 ## Puerta: comprueba que el destino esté abierto y cambia de escena.

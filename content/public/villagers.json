@@ -1,0 +1,77 @@
+{
+  "_nota": "Vecinos de ambiente: no son testigos ni usan IA. Dicen frases sueltas según el acto (\"1\", \"2\", \"3\"), sin revelar la solución. spot = baldosa del pueblo (TownLayout); look = colores del sprite (tools/make_town_art.py --chars).",
+  "villagers": [
+    {
+      "id": "vecina_tencha",
+      "name": "Doña Tencha",
+      "role": "vende flores de cempasúchil",
+      "spot": [37, 16],
+      "look": {"body": [214, 120, 40], "hair": [70, 70, 70]},
+      "lines": {
+        "1": ["¿Flores para sus difuntos, joven? El cempasúchil les enseña el camino a casa.", "Se fue la luz y se me cayó la mitad del puesto. ¡Ni las flores quieren estar aquí esta noche!", "Mi abuela decía que la víspera de los Difuntos no se anda solo por la calle."],
+        "2": ["Ya pasó la medianoche y yo aquí con las flores... ¿quién me las va a comprar ahora?", "Dicen que en el cementerio se oyen pasos. Yo ni de chiste voy."],
+        "3": ["Cuando todo esto acabe, pongo flores en todas las tumbas, se lo prometo a la Virgen.", "Las campanas no me dejan pensar, joven. Termine pronto, por favor."]
+      }
+    },
+    {
+      "id": "abuelo_lencho",
+      "name": "Don Lencho",
+      "role": "rezador del pueblo",
+      "spot": [28, 15],
+      "look": {"body": [70, 60, 50], "hair": [220, 220, 220], "hat": [120, 100, 60]},
+      "lines": {
+        "1": ["Yo rezo el rosario por las ánimas cada año. Esta noche se me trabó la lengua.", "Setenta años tengo en este pueblo y nunca había visto apagarse todo así.", "Hijo, si oye que lo llaman por su nombre, no voltee."],
+        "2": ["Las ánimas andan inquietas. Algo les debe este pueblo.", "La niebla baja del cementerio cuando alguien no descansa en paz."],
+        "3": ["La iglesia lleva años con el campanario cerrado. Dicen que por algo será.", "Dios le dé valor, hijo. Lo que se esconde tanto tiempo, pesa."]
+      }
+    },
+    {
+      "id": "cipote_neto",
+      "name": "Neto",
+      "role": "cipote con cohetes",
+      "spot": [39, 22],
+      "look": {"body": [60, 120, 190], "hair": [30, 20, 10]},
+      "lines": {
+        "1": ["¡Yo iba a tirar los cohetes de la medianoche y se fue la luz! ¿Vio el apagón?", "Mi mamá dice que me meta a la casa, pero yo quiero ver al Cipitío.", "¿Usted es detective? ¿De verdad de verdad?"],
+        "2": ["Ya no tiro cohetes, ya me dio miedo... ¿oyó eso?", "Dicen que si te portás mal te lleva la Carreta Chillona. Yo me porto bien."],
+        "3": ["¿Ya sabe quién fue? ¡Dígame, no le cuento a nadie!", "Me escondí detrás del kiosco. Desde aquí se ve todo."]
+      }
+    },
+    {
+      "id": "nina_rosa",
+      "name": "Niña Rosa",
+      "role": "vende atol shuco",
+      "spot": [25, 29],
+      "look": {"body": [150, 60, 90], "hair": [20, 15, 10]},
+      "lines": {
+        "1": ["¿Un atol shuco calientito? Para el frío y para el susto.", "Se fue la luz justo cuando estaba sirviendo. Se me regó medio atol.", "En este pueblo todos se conocen, pero esta noche nadie quiere hablar."],
+        "2": ["El atol ya se está enfriando y nadie compra. La gente se encerró en sus casas.", "Mi tía dice que la Siguanaba anda por la quebrada. Yo de aquí no me muevo."],
+        "3": ["Ojalá aparezcan todos. La niña de la procesión era mi vecina.", "Tómese un atolito antes de seguir, joven. Se ve pálido."]
+      }
+    },
+    {
+      "id": "don_chus",
+      "name": "Don Chus",
+      "role": "guitarrista",
+      "spot": [32, 33],
+      "look": {"body": [120, 90, 50], "hair": [40, 30, 25], "hat": [60, 40, 30]},
+      "lines": {
+        "1": ["Iba a tocar en la vela de los Difuntos y se fue la luz. Ni la guitarra suena bonito hoy.", "Hay una canción vieja de este pueblo que habla de una campana. Ya nadie la canta.", "La música ahuyenta a los espantos, dicen. Yo por si acaso no dejo de tocar."],
+        "2": ["Se me reventó una cuerda a la medianoche. Mal agüero, compa.", "Las campanas sonaron solas hace rato. Yo las conté y me salió raro."],
+        "3": ["Cuando se acabe esta noche, le compongo un corrido, investigador.", "Algunas canciones se dejan de cantar para no recordar."]
+      }
+    },
+    {
+      "id": "sena_mila",
+      "name": "Seña Mila",
+      "role": "lleva velas al cementerio",
+      "spot": [8, 11],
+      "look": {"body": [40, 40, 50], "hair": [90, 90, 90]},
+      "lines": {
+        "1": ["Le llevo velas a mi difunto, como cada año. Esta noche el camino se me hace largo.", "Cuídese del perro negro, joven. Ese no hace daño, pero asusta.", "El vigilante de la caseta no estaba cuando pasé. Raro, ¿verdad?"],
+        "2": ["Las velas se apagan solas en el cementerio. Yo las vuelvo a prender.", "Hay una tumba sin nombre al fondo. Nadie le pone flores."],
+        "3": ["Ya prendí mis velas. Ahora rezo para que vuelvan los nueve.", "Los muertos no hacen daño, joven. Los vivos son los que callan."]
+      }
+    }
+  ]
+}
