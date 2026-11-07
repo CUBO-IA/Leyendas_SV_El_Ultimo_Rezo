@@ -165,6 +165,16 @@ func _test_town() -> void:
 	add_child(town)
 	await _frames(3)
 	check(town.get("witnesses").size() == 10, "los 10 testigos en el pueblo")
+	# Fachadas del equipo (facades_hd): todas cargadas a escala 1/3 y con la base del lote.
+	var hd_ok: int = 0
+	for id: String in TownLayout.BUILDINGS:
+		var b: Node2D = town.get("world").get_node("B_" + id)
+		var f: Sprite2D = b.get_node("Facade")
+		var lot_h: float = (load("res://assets/town/facades/%s.png" % id) as Texture2D).get_size().y
+		if f.texture.resource_path.contains("facades_hd") and is_equal_approx(f.scale.x, 1.0 / 3.0) \
+				and is_equal_approx(b.position.y, TownLayout.BUILDINGS[id].y * TownLayout.TILE + lot_h):
+			hd_ok += 1
+	check(hd_ok == TownLayout.BUILDINGS.size(), "fachadas del equipo en los %d edificios (%d)" % [TownLayout.BUILDINGS.size(), hd_ok])
 	var visible_ids: Array[String] = []
 	for id: String in town.get("objects"):
 		if (town.get("objects")[id] as Node2D).visible:

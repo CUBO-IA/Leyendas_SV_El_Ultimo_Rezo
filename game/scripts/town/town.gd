@@ -93,19 +93,35 @@ func _set_tile(cell: Vector2i, tile: int) -> void:
 	ground.set_cell(cell, 0, Vector2i(tile, 0))
 
 
+## Fachadas del equipo (tools/import_facades.py): textura a HD x el tamaño del lote,
+## dibujada a escala 1/HD para verse 1:1 en pantalla con el zoom x3 de la cámara.
+const FACADE_HD := "res://assets/town/facades_hd/%s.png"
+const HD := 3.0
+
+
 func _build_buildings() -> void:
 	for id: String in TownLayout.BUILDINGS:
-		var tex: Texture2D = load("res://assets/town/facades/%s.png" % id) as Texture2D
+		# El lote (ancho y línea de la base) lo define la fachada procedural de siempre;
+		# así puertas, objetos y testigos quedan donde estaban.
+		var lot: Vector2 = (load("res://assets/town/facades/%s.png" % id) as Texture2D).get_size()
 		var origin: Vector2i = TownLayout.BUILDINGS[id]
-		var size_px: Vector2 = tex.get_size()
+		var base_y: float = origin.y * TownLayout.TILE + lot.y
+		var tex: Texture2D = load("res://assets/town/facades/%s.png" % id) as Texture2D
+		var scale_f: float = 1.0
+		if ResourceLoader.exists(FACADE_HD % id):
+			tex = load(FACADE_HD % id) as Texture2D
+			scale_f = 1.0 / HD
+		var size_px: Vector2 = tex.get_size() * scale_f
 		var body: StaticBody2D = StaticBody2D.new()
 		body.name = "B_" + id
 		# El nodo va en la base del edificio para que el y-sort lo ordene bien.
-		body.position = Vector2(origin.x * TownLayout.TILE, origin.y * TownLayout.TILE + size_px.y)
+		body.position = Vector2(origin.x * TownLayout.TILE, base_y)
 		var spr: Sprite2D = Sprite2D.new()
+		spr.name = "Facade"
 		spr.texture = tex
 		spr.centered = false
-		spr.offset = Vector2(0, -size_px.y)
+		spr.scale = Vector2(scale_f, scale_f)
+		spr.offset = Vector2(0, -tex.get_size().y)
 		body.add_child(spr)
 		add_rect_collision(body, Rect2(1, -size_px.y, size_px.x - 2, size_px.y - 6))
 		world.add_child(body)

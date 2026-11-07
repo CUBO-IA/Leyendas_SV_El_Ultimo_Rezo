@@ -95,6 +95,7 @@ Godot_v4.7.2-stable_win64_console.exe --headless --path game res://tests/smoke_t
 ## Créditos
 
 - Fichas de personajes basadas en el dataset *Nemotron-Personas-El-Salvador* de NVIDIA (CC BY 4.0) — ver [`server/CREDITS.md`](server/CREDITS.md).
+- Fachadas del pueblo: arte del equipo (fescobar85, `assets_generated/fachadas/`), recortadas y escaladas a su lote con `tools/import_facades.py`.
 - Retratos de testigos: arte de referencia del equipo (fescobar85) recortado a busto 512×512; sospechosos: pixel art procedural — ver [`assets_generated/portraits/CREDITOS.md`](assets_generated/portraits/CREDITOS.md).
 - Música, viento, campanadas y SFX sintetizados con `tools/make_sfx.py` (sin licencias).
 

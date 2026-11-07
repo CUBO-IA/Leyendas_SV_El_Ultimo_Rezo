@@ -26,6 +26,10 @@ func _ready() -> void:
 	(Backend.get("_mock") as MockBackend).state = st.duplicate(true)
 
 	GameState.town_spawn = Vector2i(32, 14)
+	for arg: String in OS.get_cmdline_user_args():  # -- --spawn=15,23 para mirar otra zona
+		if arg.begins_with("--spawn="):
+			var xy: PackedStringArray = arg.substr(8).split(",")
+			GameState.town_spawn = Vector2i(int(xy[0]), int(xy[1]))
 	var town: Node = await _show(SceneRouter.TOWN, "1 pueblo frente a la iglesia")
 	var inter: Interrogation = town.get("interrogation")
 	inter.open("chonita")
