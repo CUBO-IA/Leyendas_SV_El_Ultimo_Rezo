@@ -137,11 +137,61 @@ def invented_names(reply: str, known: str) -> list[str]:
     return bad
 
 
+# Raíces de sucesos sobrenaturales o de ambiente que el modelo agrega por su cuenta
+# ("la cruz flotando", "una sombra junto al árbol", "habló en náhuat"). Si la palabra no
+# aparece en lo que el testigo sabe, es un adorno inventado.
+EVENT_STEMS = ("flot", "fantasm", "espectr", "espiritu", "aparicion", "aparecio", "aparecia",
+               "sombra", "silueta", "figura", "susurr", "lament", "llanto", "aull", "niebla",
+               "neblina", "resplandor", "levit", "poseid", "endemoniad", "nahuat", "ojos rojos",
+               "sin cabeza", "sin cara", "sin rostro", "esqueleto", "calavera")
+
+
+def invented_events(reply: str, known: str) -> list[str]:
+    r, k = fold(reply), fold(known)
+    bad = []
+    for stem in EVENT_STEMS:
+        if stem not in k:
+            m = re.search(r"\b" + re.escape(stem) + r"\w*", r)
+            if m:
+                bad.append(m.group(0))
+    return bad
+
+
+ROSTER_PREFIX = "Gente del pueblo que conoces:"
+_LIST_LINES = ("gente del pueblo que conoces:", "lugares del pueblo:", "leyendas de las que se habla:")
+# Mandar al investigador con alguien no es inventar: "pregúntele a Doña Chonita".
+# La ventana alcanza para listas: "pregúntele a Doña Chonita o al Agente Ramírez".
+_REFERRAL = re.compile(r"(pregunt\w*|hable|vaya|busque|digale|dile|consulte|sabra|sabe)\b[^.!?]{0,55}$")
+
+
+def invented_people(reply: str, known: str) -> list[str]:
+    """Gente del pueblo que aparece haciendo algo esta noche sin que lo diga su guía.
+    La lista del pueblo (ROSTER_PREFIX) solo sirve para nombrarlos, no para inventarles sucesos."""
+    roster_line = next((ln for ln in known.splitlines() if ln.startswith(ROSTER_PREFIX)), "")
+    names = []
+    for item in roster_line[len(ROSTER_PREFIX):].split(";"):
+        name = item.split("(")[0].strip().rstrip(".")
+        if name:
+            names.append(fold(name.split()[-1]))  # Chonita, Ramírez, Beto...
+    specific = fold("\n".join(ln for ln in known.splitlines() if not fold(ln).startswith(_LIST_LINES)))
+    r = fold(reply)
+    bad = []
+    for n in names:
+        for m in re.finditer(r"\b" + re.escape(n) + r"\b", r):
+            if n in specific or _REFERRAL.search(r[max(0, m.start() - 70):m.start()]):
+                continue
+            bad.append(n.capitalize())
+            break
+    return bad
+
+
 def invented(reply: str, known: str) -> list[str]:
     """Lista legible de detalles inventados (vacía si todo está respaldado)."""
     out = [f"la hora {h}:{m:02d}" if m is not None else f"la hora {h}"
            for h, m in invented_times(reply, known)]
     out += [f"el nombre «{n}»" for n in invented_names(reply, known)]
+    out += [f"el suceso «{e}»" for e in invented_events(reply, known)]
+    out += [f"lo que hizo {p} esta noche" for p in invented_people(reply, known)]
     return out
 
 

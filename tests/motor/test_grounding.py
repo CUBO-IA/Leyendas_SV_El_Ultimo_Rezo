@@ -100,3 +100,23 @@ def test_todo_inventado_usa_el_respaldo():
     p = _seq("Venía Don Roque.", "Venía la señora María.")
     talk, source = _run(p)
     assert source == "fallback" and "Roque" not in talk["reply"] and "María" not in talk["reply"]
+
+
+def test_sucesos_inventados_y_los_de_la_guia():
+    def p(wid):
+        return witness_system_prompt(wid, "inicial", 5, 5)
+    assert invented("Vi la cruz flotando en la quebrada.", p("mercedes")) == ["el suceso «flotando»"]
+    assert invented("Dijo algo en náhuat y se fue.", p("beto")) == ["el suceso «nahuat»"]
+    # Lo que trae su guía sí lo puede contar.
+    assert invented("Yo solo vi la sombra sin cabeza.", p("tonito")) == []
+    assert invented("Vi la figura de sotana, sin cara.", p("chonita")) == []
+
+
+def test_gente_del_pueblo_en_sucesos_inventados():
+    def p(wid):
+        return witness_system_prompt(wid, "inicial", 5, 5)
+    found = invented("Estaba con el Beto y el Pilo, y ya no estaban.", p("chente"))
+    assert "lo que hizo Beto esta noche" in found and "lo que hizo Pilo esta noche" in found
+    # Mandarlo a preguntar o lo que nombró el investigador no es inventar.
+    assert invented("De eso pregúntele a Doña Chonita.", p("pilo")) == []
+    assert invented("¿Toñito? Me lo contó él.", p("chonita") + "\n¿Y Toñito?") == []
