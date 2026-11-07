@@ -125,9 +125,29 @@ func set_mode(new_mode: String) -> void:
 
 
 func set_base_url(url: String) -> void:
-	base_url = url.strip_edges().trim_suffix("/")
-	if base_url == "":
-		base_url = DEFAULT_URL
+	var n: String = normalize_url(url)
+	base_url = n if n != "" else DEFAULT_URL
+
+
+## Deja la dirección del motor como "http://host:puerto" sin importar cómo se escribió:
+## "100.79.57.108", "http://http://x:8000/", "x:9000"... Si no trae host (p. ej. "http://"
+## a medio escribir), devuelve "" para no guardar una dirección rota.
+static func normalize_url(url: String) -> String:
+	var s: String = url.strip_edges()
+	var secure: bool = s.begins_with("https:")
+	var changed: bool = true
+	while changed:  # quita esquemas repetidos o a medias: "http://", "https:/", "http:", "//"
+		changed = false
+		for prefix: String in ["https://", "http://", "https:/", "http:/", "https:", "http:", "//", "/"]:
+			if s.begins_with(prefix):
+				s = s.substr(prefix.length())
+				changed = true
+	var host: String = s.get_slice("/", 0).strip_edges()
+	if host == "" or host.begins_with(":"):
+		return ""
+	if host.find(":") == -1:
+		host += ":8000"
+	return ("https://" if secure else "http://") + host
 
 
 func save_settings() -> void:
