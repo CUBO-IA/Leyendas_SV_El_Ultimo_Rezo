@@ -2,7 +2,7 @@
 
 Juego de investigación sobrenatural ambientado en **San Jacinto de las Ánimas, El Salvador**, la víspera del Día de los Difuntos. Nueve vecinos han desaparecido y solo queda una noche para resolverlo.
 
-El jugador explora el pueblo, interroga a testigos controlados por IA (con voz), les presenta evidencias para descubrir sus mentiras y acusa a **1 de 6 entidades** antes de la medianoche. Hay **3 finales**: malo, gris y verdadero.
+El jugador explora el pueblo, interroga a testigos controlados por IA (con voz), les presenta evidencias para descubrir sus mentiras y acusa a **1 de 6 entidades** antes de la última campanada. Hay **3 finales**: malo, gris y verdadero.
 
 > Historia completa: [`docs/historia.md`](docs/historia.md) · Prompts de fases: [`docs/prompts_claude_code.md`](docs/prompts_claude_code.md)
 
@@ -12,7 +12,9 @@ El jugador explora el pueblo, interroga a testigos controlados por IA (con voz),
 - **Voz completa**: testigos con voz Magpie TTS (ES-US, cambia por emoción) y entrada de voz del jugador por STT (Riva/Parakeet). Si la voz falla, el juego sigue en texto.
 - **10 testigos** (Chonita, Chepe, Chente, Ramírez, Padre Mauricio, Toñito, Beto, Pilo, Alcides, Mercedes) y **6 sospechosos** (Cipitío, Siguanaba, Cadejo, Padre Sin Cabeza, Carreta Chillona, Descarnada).
 - **Modo demo sin motor**: backend `mock` que responde con los fixtures del contrato.
-- **Build de Windows** (v1.0) con `.exe` + motor incrustado.
+- **Testigos que no inventan**: el prompt les da solo lo que saben y un verificador corrige nombres u horas inventados.
+- **Fácil de jugar**: clic o teclado para caminar e interactuar; micrófono de un clic (se corta solo al callarte) y preguntas sugeridas.
+- **Build de Windows**: `.exe` autocontenido para el cliente; el motor se corre aparte (ver abajo).
 
 ## Arquitectura
 
@@ -36,7 +38,7 @@ Endpoints: `GET /health`, `POST /session`, `GET /session/{id}`, `POST /talk`, `P
 ├── server/                # Motor FastAPI + pipelines (personas, retratos, voz)
 ├── contract/              # schemas/*.schema.json + fixtures/*.json
 ├── content/public/        # Datos públicos (world, evidence, characters)
-├── assets_generated/      # Retratos 512x512 (portraits/) y arte de referencia (personajes/)
+├── assets_generated/      # Retratos 512x512 (portraits/) y arte del equipo (personajes/, fachadas/)
 ├── tests/                 # Pruebas de contrato y del motor
 ├── tools/                 # Scripts: smoke tests, placeholders, SFX, build
 ├── docs/                  # Historia y prompts de fases
@@ -68,7 +70,15 @@ copy .env.example .env   # y completa NVIDIA_API_KEY
 1. Abre Godot → **Project → Import** → selecciona `game/project.godot`.
 2. Pulsa **F5** (ejecutar). Por defecto usa el backend `mock`; para jugar contra el motor real, en **Opciones** cambia a backend `http` o ejecuta con `-- --backend=http`.
 
-### 3. Pruebas
+### 3. Build de Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\build_windows.ps1
+```
+
+Genera `game\export\LeyendasSV\` y `LeyendasSV-windows.zip` (requiere las plantillas de exportación de Godot 4.7.2). Dentro vienen dos lanzadores: **Jugar con el motor.bat** (con el motor corriendo, IA y voz) y **Jugar sin motor (demo).bat** (modo mock, sin internet). El `.exe` no incluye el motor ni la solución del caso.
+
+### 4. Pruebas
 
 ```powershell
 .venv\Scripts\python -m pytest tests/contract -q   # contrato + fixtures
