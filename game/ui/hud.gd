@@ -6,7 +6,13 @@ extends CanvasLayer
 signal journal_pressed
 signal pause_pressed
 
+const FEAR_NAMES: Array[String] = ["Tranquilo", "Inquieto", "Asustado", "Aterrado"]
+const FEAR_COLORS: Array[Color] = [Color("5fae7a"), Color("e0b02c"), Color("e07a2c"), Color("d0504a")]
+
 var journal_button: Button
+var _fear_label: Label
+var _fear_bar: ProgressBar
+var _fear_fill: StyleBoxFlat
 var _clock: Label
 var _counts: Label
 var _place: Label
@@ -31,6 +37,24 @@ func _ready() -> void:
 	col.add_child(_clock)
 	_counts = UiKit.label("", 17)
 	col.add_child(_counts)
+	var fear_row: HBoxContainer = HBoxContainer.new()
+	fear_row.add_theme_constant_override("separation", 8)
+	col.add_child(fear_row)
+	_fear_label = UiKit.label("", 15, UiKit.MUTED)
+	_fear_label.custom_minimum_size = Vector2(92, 0)
+	fear_row.add_child(_fear_label)
+	_fear_bar = ProgressBar.new()
+	_fear_bar.show_percentage = false
+	_fear_bar.custom_minimum_size = Vector2(120, 10)
+	_fear_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_fear_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fbg: StyleBoxFlat = StyleBoxFlat.new()
+	fbg.bg_color = Color(0.1, 0.08, 0.14)
+	_fear_fill = StyleBoxFlat.new()
+	_fear_bar.add_theme_stylebox_override("background", fbg)
+	_fear_bar.add_theme_stylebox_override("fill", _fear_fill)
+	fear_row.add_child(_fear_bar)
+	set_fear(Night.fear)
 
 	_place = UiKit.label("", 20, UiKit.INK)
 	_place.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, 20)
@@ -73,9 +97,26 @@ func _ready() -> void:
 
 
 func refresh() -> void:
-	_clock.text = "%s · Acto %s" % [GameState.clock_text(), TownLayout.act_roman(GameState.act())]
+	_clock.text = "%s · Acto %s" % [Night.clock_text(), TownLayout.act_roman(GameState.act())]
 	_counts.text = "Evidencias: %d · Deducciones: %d" % [
 		GameState.evidence_ids().size(), (GameState.world.get("deductions", []) as Array).size()]
+
+
+## Miedo del jugador (0-100): barra y palabra con el color del nivel.
+func set_fear(value: float) -> void:
+	var lvl: int = 3 if value >= 80.0 else 2 if value >= 60.0 else 1 if value >= 35.0 else 0
+	_fear_bar.value = value
+	_fear_fill.bg_color = FEAR_COLORS[lvl]
+	_fear_label.text = FEAR_NAMES[lvl]
+	_fear_label.add_theme_color_override("font_color", FEAR_COLORS[lvl])
+
+
+func fear_text() -> String:
+	return _fear_label.text
+
+
+func clock_label() -> String:
+	return _clock.text
 
 
 func set_place(location_id: String) -> void:

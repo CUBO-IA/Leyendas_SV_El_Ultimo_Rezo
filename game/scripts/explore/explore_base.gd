@@ -32,6 +32,22 @@ var _known_act: int = 1
 var _click_target: Interactable = null  ## a dónde va el jugador tras un clic
 var _hovering: bool = false
 
+## Miedo (Night): faroles y velas calman; con miedo muy alto hay susurros.
+const LAMP_CALM_RADIUS := 44.0
+const WHISPERS: Array[String] = [
+	"Alguien susurra tu nombre detrás de ti…",
+	"Un frío te recorre la espalda.",
+	"Juras que algo se movió entre los faroles.",
+	"Las campanas parecen sonar dentro de tu cabeza.",
+	"Huele a flores marchitas y a cera derretida.",
+	"Por un instante, todo el pueblo se queda en silencio.",
+]
+var lamp_points: Array[Vector2] = []  ## faroles y velas (las subclases los agregan)
+var fear_overlay: FearOverlay
+var _whisper_wait: float = 20.0
+var _whisper_i: int = 0
+var _calm_hint_shown: bool = false
+
 
 func _ready() -> void:
 	if not GameState.has_session():
@@ -44,6 +60,8 @@ func _ready() -> void:
 	add_child(world)
 	move_child(world, mini(1, get_child_count() - 1))
 
+	fear_overlay = FearOverlay.new()
+	add_child(fear_overlay)
 	hud = Hud.new()
 	add_child(hud)
 	message_box = MessageBox.new()
@@ -64,6 +82,11 @@ func _ready() -> void:
 		if not _overlay_open() and not _busy:
 			pause_menu.open())
 	interrogation.journal_requested.connect(_journal_from_interrogation)
+	Night.clock_changed.connect(func(_t: String) -> void: hud.refresh())
+	Night.bell_rang.connect(_on_bell)
+	Night.fear_changed.connect(_on_fear)
+	Night.active = true
+	_on_fear(Night.fear)
 
 	_known_unlocked = (GameState.world.get("unlocked_locations", []) as Array).duplicate()
 	_known_act = GameState.act()
@@ -91,7 +114,7 @@ func _ambience_kind() -> String:
 	return "town"
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if player == null or hud == null:
 		return
 	var z: String = _zone_at(player.global_position)
@@ -108,6 +131,38 @@ func _process(_delta: float) -> void:
 		elif not player.is_walking():
 			_click_target = null
 	_update_hover()
+	_update_night(delta)
+
+
+func _update_night(delta: float) -> void:
+	Night.place = _zone if _zone != "" else _here()
+	var near: bool = false
+	for p: Vector2 in lamp_points:
+		if p.distance_squared_to(player.global_position) < LAMP_CALM_RADIUS * LAMP_CALM_RADIUS:
+			near = true
+			break
+	Night.near_lamp = near
+	if Night.fear_level() >= 3 and not get_tree().paused:
+		_whisper_wait -= delta
+		if _whisper_wait <= 0.0:
+			_whisper_wait = randf_range(25.0, 40.0)
+			Sound.play_sfx("susurro", -4.0)
+			hud.toast(WHISPERS[_whisper_i % WHISPERS.size()], UiKit.VIOLET.lightened(0.35))
+			_whisper_i += 1
+
+
+func _on_bell(strikes: int, label: String) -> void:
+	Sound.bell(strikes, 1.3 if strikes > 3 else 2.4)
+	hud.toast(label, UiKit.VIOLET.lightened(0.3))
+
+
+func _on_fear(value: float) -> void:
+	fear_overlay.set_fear(value)
+	hud.set_fear(value)
+	Sound.set_heartbeat(clampf((value - 55.0) / 45.0, 0.0, 1.0) if value >= 55.0 else 0.0)
+	if value >= 60.0 and not _calm_hint_shown:
+		_calm_hint_shown = true
+		hud.toast("Te late fuerte el corazón: la luz de un farol te calma", UiKit.ACCENT)
 
 
 func spawn_player(at: Vector2, limits: Rect2i = Rect2i(), follow: bool = true) -> void:
@@ -338,6 +393,8 @@ func _update_hover() -> void:
 
 func _exit_tree() -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	Night.active = false
+	Sound.set_heartbeat(0.0)
 
 
 func interact(target: Interactable) -> void:

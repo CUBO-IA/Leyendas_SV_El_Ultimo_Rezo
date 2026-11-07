@@ -6,6 +6,8 @@ Salida en game/assets/sfx/:
   contradiccion.wav  golpe grave + campana disonante (al quebrar a un testigo)
   evidencia.wav      dos notas ascendentes (evidencia nueva)
   voz.wav            parpadeo corto para el texto letra a letra
+  latido.wav         latido de 1 s en bucle (miedo alto)
+  susurro.wav        susurro sin palabras (miedo muy alto)
 """
 from __future__ import annotations
 
@@ -128,8 +130,37 @@ def musica(bars: int = 8, bpm: float = 72.0) -> list[float]:
     return out
 
 
+def latido() -> list[float]:
+    """Un latido "lub-dub" en 1 s exacto (para bucle; Godot sube el tono si hay más miedo)."""
+    n = RATE
+    out = [0.0] * n
+    for start, amp, freq in ((0.0, 1.0, 52.0), (0.26, 0.7, 60.0)):
+        for i in range(int(RATE * 0.22)):
+            t = i / RATE
+            out[int(start * RATE) + i] += amp * env(t, 0.008, 0.06) * math.sin(2 * math.pi * freq * t)
+    return out
+
+
+def susurro(seconds: float = 2.6) -> list[float]:
+    """Ruido de banda media con sílabas (envolvente a ~5 Hz): un susurro sin palabras."""
+    rnd = random.Random(1102)
+    n = int(RATE * seconds)
+    out, lp, hp = [], 0.0, 0.0
+    for i in range(n):
+        t = i / RATE
+        x = rnd.random() * 2 - 1
+        lp += 0.35 * (x - lp)          # quita lo más agudo
+        hp = lp - (hp + 0.02 * (lp - hp))  # quita lo grave
+        syll = max(0.0, math.sin(2 * math.pi * 4.7 * t + math.sin(2 * math.pi * 0.9 * t))) ** 2
+        fade = min(1.0, t / 0.4, (seconds - t) / 0.6)
+        out.append(hp * syll * fade)
+    return out
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    save("latido.wav", latido())
+    save("susurro.wav", susurro())
     save("contradiccion.wav", contradiccion())
     save("evidencia.wav", evidencia())
     save("voz.wav", voz())

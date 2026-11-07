@@ -30,6 +30,8 @@ func _ready() -> void:
 		if arg.begins_with("--spawn="):
 			var xy: PackedStringArray = arg.substr(8).split(",")
 			GameState.town_spawn = Vector2i(int(xy[0]), int(xy[1]))
+		elif arg.begins_with("--fear="):  # -- --fear=90 para ver la viñeta del miedo
+			Night.add_fear(float(arg.substr(7)))
 	var town: Node = await _show(SceneRouter.TOWN, "1 pueblo frente a la iglesia")
 	var inter: Interrogation = town.get("interrogation")
 	inter.open("chonita")

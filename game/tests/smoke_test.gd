@@ -21,6 +21,7 @@ func _ready() -> void:
 		await _test_interrogation()
 		await _test_a4()
 		await _test_sound()
+		await _test_night()
 	else:
 		await _test_http()
 		await _test_full_game_http()
@@ -641,6 +642,66 @@ func _test_sound() -> void:
 
 func _test_wav() -> PackedByteArray:
 	return FileAccess.get_file_as_bytes("res://tests/assets/pregunta_plaza.wav")
+
+
+var _bells: Array = []
+
+
+## Reloj vivo, campanadas por tiempo y miedo del jugador (Night).
+func _test_night() -> void:
+	print("  -- la noche: reloj, campanadas y miedo")
+	await Backend.new_session("Noche")
+	check(Night.clock_text() == "11:47 p. m." and Night.fear == 0.0, "partida nueva: 11:47 p. m. y sin miedo")
+	check(Night.to_minutes("23:47") == -13 and Night.to_minutes("00:13") == 13 and Night.from_minutes(-13) == "23:47", "minutos desde medianoche")
+	_bells.clear()
+	var on_bell: Callable = func(n: int, label: String) -> void: _bells.append([n, label])
+	Night.bell_rang.connect(on_bell)
+	Night.advance_minutes(12.5)
+	check(Night.clock_text() == "11:59 p. m." and _bells.is_empty(), "el reloj avanza (11:59 p. m.) sin campanadas")
+	Night.advance_minutes(1.0)
+	check(_bells.size() == 1 and _bells[0][0] == 12 and "doce" in str(_bells[0][1]), "medianoche: 12 campanadas")
+	check(Night.fear >= Night.FEAR_HOUR_BELL, "las campanadas dan miedo (%.0f)" % Night.fear)
+	Night.advance_minutes(100.0)
+	check(Night.clock_text() == "12:12 a. m.", "el acto I no pasa de las 12:12 a. m. (no adelanta la historia)")
+	# Cambio de acto: el motor fija la hora y el reloj vivo vuelve a empezar.
+	var st: Dictionary = GameState.world.duplicate(true)
+	st["act"] = 2
+	st["clock"] = "00:13"
+	var before: float = Night.fear
+	GameState.apply_state(st)
+	check(Night.clock_text() == "12:13 a. m." and Night.fear >= before + Night.FEAR_NEW_ACT - 0.01, "acto II: 12:13 a. m. y más miedo")
+	_bells.clear()
+	Night.advance_minutes(2.0)
+	check(_bells.size() == 1 and _bells[0][0] == 1 and "cuarto" in str(_bells[0][1]), "12:15 a. m.: suena un cuarto de hora")
+	Night.bell_rang.disconnect(on_bell)
+	# Miedo: sube en el cementerio, baja junto a un farol, entre 0 y 100.
+	Night.fear = 30.0
+	Night.place = "cementerio"
+	Night.near_lamp = false
+	Night.tick(10.0)
+	var in_cemetery: float = Night.fear
+	check(in_cemetery > 37.0, "en el cementerio el miedo sube (%.0f)" % in_cemetery)
+	Night.place = "plaza"
+	Night.near_lamp = true
+	Night.tick(10.0)
+	check(Night.fear < in_cemetery - 15.0, "junto a un farol baja (%.0f)" % Night.fear)
+	Night.add_fear(500.0)
+	check(Night.fear == 100.0 and Night.fear_level() == 3, "tope 100: aterrado")
+	# En el pueblo: HUD con hora viva y miedo, viñeta y latido.
+	await Backend.new_session("Noche 2")
+	var town: Node2D = (load(SceneRouter.TOWN) as PackedScene).instantiate() as Node2D
+	add_child(town)
+	await _frames(3)
+	var hud: Hud = town.get("hud")
+	check(Night.active and "11:47 p. m." in hud.clock_label() and hud.fear_text() == "Tranquilo", "HUD: hora viva y miedo tranquilo")
+	check((town.get("lamp_points") as Array).size() == TownLayout.LAMPS.size(), "los faroles calman (%d)" % TownLayout.LAMPS.size())
+	Night.add_fear(85.0)
+	await _frames(2)
+	check(hud.fear_text() == "Aterrado" and Sound.heartbeat_playing(), "miedo alto: aterrado y se oye el latido")
+	check((town.get("fear_overlay") as FearOverlay) != null, "viñeta del miedo en pantalla")
+	town.queue_free()
+	await _frames(2)
+	check(not Night.active and not Sound.heartbeat_playing(), "al salir del pueblo la noche se detiene y el latido calla")
 
 
 ## Contra el motor real: la voz de un testigo suena y el micrófono se transcribe.

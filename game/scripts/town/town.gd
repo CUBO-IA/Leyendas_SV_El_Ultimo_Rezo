@@ -146,6 +146,7 @@ func _build_lamps() -> void:
 	for cell: Vector2i in TownLayout.LAMPS:
 		var lamp: Node2D = Node2D.new()
 		lamp.position = TownLayout.to_world(cell)
+		lamp_points.append(lamp.position)  # junto a un farol, el miedo baja
 		var spr: Sprite2D = Sprite2D.new()
 		spr.texture = tex
 		spr.offset = Vector2(0, -14)

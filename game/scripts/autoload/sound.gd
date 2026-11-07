@@ -23,6 +23,7 @@ var volumes: Dictionary = {"Music": 0.45, "SFX": 0.8, "Voice": 1.0}
 var _music: AudioStreamPlayer
 var _wind: AudioStreamPlayer
 var _bell: AudioStreamPlayer
+var _heart: AudioStreamPlayer
 var _voice: AudioStreamPlayer
 var _voice_req: HTTPRequest
 var _voice_token: int = 0
@@ -107,11 +108,29 @@ func ambience() -> String:
 	return _ambience
 
 
-## Campanadas (una cada 2.4 s).
-func bell(times: int = 1) -> void:
+## Campanadas (una cada `interval` s; las doce de medianoche van más seguidas).
+func bell(times: int = 1, interval: float = 2.4) -> void:
 	for i: int in times:
 		_bell.play()
-		await get_tree().create_timer(2.4).timeout
+		await get_tree().create_timer(interval).timeout
+
+
+## Latido según el miedo: 0 lo apaga; 1 es el más fuerte y rápido.
+func set_heartbeat(level: float) -> void:
+	if _heart == null:
+		_heart = _player("latido", "SFX", true)
+	if level <= 0.0:
+		if _heart.playing:
+			_heart.stop()
+		return
+	_heart.volume_db = lerpf(-22.0, -4.0, clampf(level, 0.0, 1.0))
+	_heart.pitch_scale = lerpf(0.95, 1.6, clampf(level, 0.0, 1.0))
+	if not _heart.playing:
+		_heart.play()
+
+
+func heartbeat_playing() -> bool:
+	return _heart != null and _heart.playing
 
 
 func play_sfx(sfx_name: String, db: float = 0.0) -> void:

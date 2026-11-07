@@ -22,6 +22,7 @@ func _build_map() -> void:
 	for c: Vector2i in room["candles"]:
 		var candle: Node2D = Node2D.new()
 		candle.position = InteriorLayout.to_world(c)
+		lamp_points.append(candle.position)  # las velas también calman
 		var spr: Sprite2D = Sprite2D.new()
 		spr.texture = load(PROPS % "vela") as Texture2D
 		spr.offset = Vector2(0, -7)
