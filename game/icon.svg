@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0d0a1f"/>
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#c9a45c" stroke-width="10"/>
+  <!-- luna -->
+  <circle cx="360" cy="140" r="52" fill="#f4e9c9"/>
+  <circle cx="376" cy="128" r="44" fill="#0d0a1f"/>
+  <!-- campanario / silueta -->
+  <path d="M116 392 L116 216 L160 216 L160 150 L196 112 L232 150 L232 216 L276 216 L276 392 Z" fill="#1f1838" stroke="#c9a45c" stroke-width="8" stroke-linejoin="round"/>
+  <!-- campana -->
+  <path d="M164 196 C164 166 178 152 196 152 C214 152 228 166 228 196 L240 216 L152 216 Z" fill="#c9a45c"/>
+  <rect x="160" y="216" width="72" height="10" rx="5" fill="#8a6d2e"/>
+  <!-- puerta de la iglesia -->
+  <path d="M176 392 L176 320 C176 296 184 284 196 284 C208 284 216 296 216 320 L216 392 Z" fill="#0d0a1f" stroke="#c9a45c" stroke-width="6"/>
+  <!-- vela / llama -->
+  <ellipse cx="196" cy="300" rx="9" ry="16" fill="#f0a13a"/>
+  <ellipse cx="196" cy="292" rx="5" ry="9" fill="#ffd98a"/>
+  <!-- estrellas -->
+  <circle cx="130" cy="130" r="7" fill="#f4e9c9"/>
+  <circle cx="300" cy="100" r="5" fill="#f4e9c9"/>
+  <circle cx="420" cy="240" r="6" fill="#c9a45c"/>
+  <circle cx="130" cy="300" r="5" fill="#f4e9c9"/>
+</svg>

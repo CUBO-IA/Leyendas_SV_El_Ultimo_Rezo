@@ -17,6 +17,7 @@ El jugador explora el pueblo, interroga a testigos controlados por IA (con voz),
 - **Jugar juntos**: varios jugadores se unen a la misma partida, se ven en el mapa y resuelven la misma investigación (lo que encuentra uno le aparece a todos; si alguien acusa, todos ven el final).
 - **Ambiente**: fachadas del equipo, vecinos con frases propias, el cementerio en el Acto II, campanadas por tiempo, miedo del jugador, niebla y tarjetas de cada acto.
 - **Build de Windows**: `.exe` autocontenido para el cliente; el motor se corre aparte (ver abajo).
+- **Build de Linux**: binario ELF x86_64 autocontenido (+ AppImage opcional); el motor se corre aparte (ver abajo).
 
 ## Arquitectura
 
@@ -96,7 +97,16 @@ powershell -ExecutionPolicy Bypass -File tools\build_windows.ps1
 
 Genera `game\export\LeyendasSV\` y `LeyendasSV-windows.zip` (requiere las plantillas de exportación de Godot 4.7.2). Dentro vienen dos lanzadores: **Jugar con el motor.bat** (con el motor corriendo, IA y voz) y **Jugar sin motor (demo).bat** (modo mock, sin internet). El `.exe` no incluye el motor ni la solución del caso.
 
-### 4. Pruebas
+### 4. Build de Linux (x86_64)
+
+```bash
+bash tools/build_linux.sh            # carpeta + tar.gz
+bash tools/build_linux.sh --appimage # + AppImage (requiere appimagetool)
+```
+
+Genera `game/export/LeyendasSV/` (con `LeyendasSV.x86_64`, pck incrustado) y `LeyendasSV-linux.tar.gz`. Requiere Godot 4.7.2 para Linux y las plantillas en `~/.local/share/godot/export_templates/4.7.2.stable/`; el script localiza el binario en las rutas habituales o en la variable `GODOT_BIN`. Dentro vienen dos lanzadores: **Jugar con el motor.sh** (requiere `python3 -m server` corriendo) y **Jugar sin motor (demo).sh** (modo mock, sin internet). El binario no incluye el motor ni la solución del caso. El `.desktop` e icono para el AppImage usan `game/icon.svg`.
+
+### 5. Pruebas
 
 ```powershell
 .venv\Scripts\python -m pytest tests/contract -q   # contrato + fixtures
